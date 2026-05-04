@@ -2,7 +2,7 @@ import engine
 import data
     
 def main(game_map):
-    if not data.LEVEL_1_MAP or not data.LEVEL_1_MAP[0]:
+    if not data.DUNGEON[] or not data.LEVEL_1_MAP[0]:
         print("The world has not been created yet! (Empty Map)")
         return
     height = len(data.LEVEL_1_MAP)
