@@ -1,4 +1,12 @@
 # data.py
+PLAYER = {
+        "x": 2,
+        "y": 2,
+        "hp": 100,
+        "gp": 0,
+        "marker": "P",
+        "max_hp": 200
+}
 
 LEVEL_1_MAP = [
     [".",".",".","G","G",".",".",".","G","G",],
@@ -19,7 +27,9 @@ MONSTERS_L1 = [
 ]
 
 TILE_EFFECTS = {
-    "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
-    "G": {"msg": "GOLD! +5 GP", "gp": 5, "consume": "."},
-    "w": {"msg": "A cold stone wall.", "block": True}
-}
+        "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
+        "G": {"msg": "GOLD! +5 GP", "gp": 5, "consume": "."},
+        "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
+        "W": {"msg": "A solid wall.", "block": True}
+    }
+

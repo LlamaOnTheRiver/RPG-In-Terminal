@@ -1,4 +1,5 @@
 import os
+import data
 
 def place_player_on_map(game_map, player):
     # Use the dictionary values directly
@@ -44,16 +45,8 @@ def check_tile_event(player, new_pos, game_map):
     # 2. Tile Logic
     tile = game_map[ny][nx]
     
-    # Define what each tile does
-    tile_effects = {
-        "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
-        "G": {"msg": "GOLD! +5 GP", "gp": 5, "consume": "."},
-        "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
-        "W": {"msg": "A solid wall.", "block": True}
-    }
-
-    if tile in tile_effects:
-        effect = tile_effects[tile]
+    if tile in data.TILE_EFFECTS:
+        effect = data.TILE_EFFECTS[tile]
         
         # 1. Handle Blocking immediately
         if effect.get("block"):
