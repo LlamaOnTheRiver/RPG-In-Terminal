@@ -31,10 +31,13 @@ def clear_screen():
     else:
         os.system('clear')
 
-def check_tile_event(player, new_pos):
+def check_tile_event(player, new_pos, current_level):
     nx, ny = new_pos
+    current_map = current_level["map"]
     height = len(data.DUNGEON[player["current_map"]]["map"])
     width = len(data.DUNGEON[player["current_map"]]["map"][0])
+
+    tile = current_map[ny][nx]
 
     # 1. Boundary Check
     if not (0 <= nx < width and 0 <= ny < height):
@@ -42,8 +45,7 @@ def check_tile_event(player, new_pos):
         input("...")
         return player # Return player unchanged
 
-    # 2. Tile Logic
-    tile = data.DUNGEON[player["current_map"]]["map"][ny][nx]
+
     
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
@@ -61,7 +63,7 @@ def check_tile_event(player, new_pos):
 
         # 4. Handle Consuming
         if "consume" in effect:
-            data.DUNGEON[player["current_map"]]["map"][ny][nx] = effect["consume"]
+            current_map[ny][nx] = effect["consume"]
 
         if "teleport" in effect:
             cords = (ny, nx)
@@ -87,13 +89,13 @@ def check_tile_event(player, new_pos):
     player["x"], player["y"] = nx, ny
     return player
 
-def update_visibility(fog_map, width, height):
+def update_visibility(fog_map, current_map, width, height):
     # Reveal a 1-tile radius
     for dy in [-1, 0, 1]:
         for dx in [-1, 0, 1]:
             rx, ry = data.PLAYER["x"] + dx, data.PLAYER["y"] + dy
             if 0 <= rx < width and 0 <= ry < height:
-                fog_map[ry][rx] = data.DUNGEON[data.PLAYER["current_map"]]["map"][ry][rx]
+                fog_map[ry][rx] = current_map[ry][rx]
     return fog_map
 
 

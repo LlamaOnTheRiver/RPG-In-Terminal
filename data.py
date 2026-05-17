@@ -48,10 +48,8 @@ PLAYER = {
         "x": 1,
         "y": 1,
         "current_map": 1,
-        "monsters": DUNGEON[1]["monsters"],
         "hp": 100,
         "gp": 0,
-        #"marker": "P",
         "marker": "\033[94mP\033[0m",
         "max_hp": 200
 }
