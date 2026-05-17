@@ -39,7 +39,7 @@ def main():
 
 
         engine.update_visibility(fog_map, width, height)
-        temp_view = [row[:] for row in fog_map]
+        temp_view = [list(row) for row in fog_map]
         view = engine.place_player_on_map(temp_view)
         viewport = engine.get_viewport(view)
         engine.clear_screen()

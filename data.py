@@ -51,7 +51,8 @@ PLAYER = {
         "monsters": DUNGEON[1]["monsters"],
         "hp": 100,
         "gp": 0,
-        "marker": "P",
+        #"marker": "P",
+        "marker": "\033[94mP\033[0m",
         "max_hp": 200
 }
 

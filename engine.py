@@ -6,22 +6,12 @@ import data
 def place_player_on_map(temp_view):
         px = data.PLAYER["x"]
         py = data.PLAYER["y"]
-        marker = data.PLAYER["marker"]
-        current_map_id = data.PLAYER["current_map"]
+        colored_marker = data.PLAYER["marker"]
 
-        # 1. Get the actual map data
-        original_map = data.DUNGEON[current_map_id]["map"]
+        if 0 <= py < len(temp_view) and 0 <= px < len(temp_view[0]):
+            temp_view[py][px] = colored_marker
 
-        # 2. Create a "frame" (a copy of the map so we don't ruin the original)
-        # This is a list of lists
-        frame = [list(row) for row in original_map]
-
-        # 3. Place the player on the FRAME, not the DUNGEON
-        if 0 <= py < len(frame) and 0 <= px < len(frame[0]):
-            frame[py][px] = marker
-
-        # 4. Return the frame as a list of strings for printing
-        return ["".join(row) for row in frame]
+        return temp_view
     
 
 def move_player():
@@ -106,18 +96,21 @@ def update_visibility(fog_map, width, height):
                 fog_map[ry][rx] = data.DUNGEON[data.PLAYER["current_map"]]["map"][ry][rx]
     return fog_map
 
+
 def get_viewport(view, radius=2):
+    # 'view' should be a list of lists (the grid) for this to work best
     height = len(view)
     width = len(view[0]) if height > 0 else 0
     size = (radius * 2) + 1
-    
-    # Calculate the bounds
+
     start_y = max(0, min(data.PLAYER["y"] - radius, height - size))
     start_x = max(0, min(data.PLAYER["x"] - radius, width - size))
-    
+
     viewport = []
     for y in range(start_y, start_y + size):
-        if y < height:
-            row_string = view[y]
-            viewport.append(row_string[start_x : start_x + size])
+        if y < len(view):
+            # Slice the list, then join
+            row_list = view[y]
+            sliced_row = row_list[start_x: start_x + size]
+            viewport.append("".join(sliced_row))
     return viewport
