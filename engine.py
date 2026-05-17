@@ -3,17 +3,25 @@ import data
 
 
 
-def place_player_on_map(game_map, player):
-    # Use the dictionary values directly
-    px = player["x"]
-    py = player["y"]
-    marker = player["marker"]
+def place_player_on_map(temp_view):
+        px = data.PLAYER["x"]
+        py = data.PLAYER["y"]
+        marker = data.PLAYER["marker"]
+        current_map_id = data.PLAYER["current_map"]
 
-    if game_map and 0 <= px < len(game_map[0]) and 0 <= py < len(game_map): 
-        # Update the map at the correct row (py) and column (px)
+        # 1. Get the actual map data
+        original_map = data.DUNGEON[current_map_id]["map"]
 
-        game_map[py][px] = marker
-    return ["".join(row) for row in game_map]
+        # 2. Create a "frame" (a copy of the map so we don't ruin the original)
+        # This is a list of lists
+        frame = [list(row) for row in original_map]
+
+        # 3. Place the player on the FRAME, not the DUNGEON
+        if 0 <= py < len(frame) and 0 <= px < len(frame[0]):
+            frame[py][px] = marker
+
+        # 4. Return the frame as a list of strings for printing
+        return ["".join(row) for row in frame]
     
 
 def move_player():
@@ -74,6 +82,11 @@ def check_tile_event(player, new_pos):
             data.PLAYER["current_map"] = stair_data["target_map"]
             data.PLAYER["x"] = stair_data["target_x"]
             data.PLAYER["y"] = stair_data["target_y"]
+            if "msg" in effect:
+                print(effect["msg"])
+                input("...")
+            return data.PLAYER
+
 
 
     # Update position and return
@@ -93,14 +106,14 @@ def update_visibility(fog_map, width, height):
                 fog_map[ry][rx] = data.DUNGEON[data.PLAYER["current_map"]]["map"][ry][rx]
     return fog_map
 
-def get_viewport(view, player, radius=2):
+def get_viewport(view, radius=2):
     height = len(view)
     width = len(view[0]) if height > 0 else 0
     size = (radius * 2) + 1
     
     # Calculate the bounds
-    start_y = max(0, min(player["y"] - radius, height - size))
-    start_x = max(0, min(player["x"] - radius, width - size))
+    start_y = max(0, min(data.PLAYER["y"] - radius, height - size))
+    start_x = max(0, min(data.PLAYER["x"] - radius, width - size))
     
     viewport = []
     for y in range(start_y, start_y + size):

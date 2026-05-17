@@ -1,12 +1,12 @@
 DUNGEON = {
     1: {
         "map": [
-            [".", ".", "G"],
-            [".", "W", "."],
-            ["T", ".", "S"]
+            [".", ".", ".",".", ".", ".","W", "G", "G"],
+            [".", ".", ".","W", ".", "W","W", "G", "G"],
+            [".", ".", ".","W", ".", ".",".", ".", "S"]
         ],
         "stairs":{
-            (2,2): {"target_map": 2, "target_x": 4, "target_y": 3},
+            (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
         },
         "monsters": [
             {"x": 2, "y": 0, "marker": "M", "name": "Rat", "dmg": 5}
@@ -25,6 +25,8 @@ DUNGEON = {
             [".",".",".","G","G",".",".",".","G","G",],
             [".",".",".","G","G",".",".",".","G","G",],
         ],
+        "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
+                  },
         "monsters": [
             {"x": 1, "y": 2, "marker": "G", "name": "Ghost", "dmg": 20},
             {"x": 4, "y": 0, "marker": "M", "name": "Goblin", "dmg": 15},
@@ -43,8 +45,8 @@ TILE_EFFECTS = {
     }
 
 PLAYER = {
-        "x": 2,
-        "y": 2,
+        "x": 1,
+        "y": 1,
         "current_map": 1,
         "monsters": DUNGEON[1]["monsters"],
         "hp": 100,
