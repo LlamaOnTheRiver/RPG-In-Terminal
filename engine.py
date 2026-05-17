@@ -1,6 +1,8 @@
 import os
 import data
 
+
+
 def place_player_on_map(game_map, player):
     # Use the dictionary values directly
     px = player["x"]
@@ -31,10 +33,10 @@ def clear_screen():
     else:
         os.system('clear')
 
-def check_tile_event(player, new_pos, game_map):
+def check_tile_event(player, new_pos):
     nx, ny = new_pos
-    height = len(game_map)
-    width = len(game_map[0])
+    height = len(data.DUNGEON[player["current_map"]]["map"])
+    width = len(data.DUNGEON[player["current_map"]]["map"][0])
 
     # 1. Boundary Check
     if not (0 <= nx < width and 0 <= ny < height):
@@ -43,7 +45,7 @@ def check_tile_event(player, new_pos, game_map):
         return player # Return player unchanged
 
     # 2. Tile Logic
-    tile = game_map[ny][nx]
+    tile = data.DUNGEON[player["current_map"]]["map"][ny][nx]
     
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
@@ -61,7 +63,18 @@ def check_tile_event(player, new_pos, game_map):
 
         # 4. Handle Consuming
         if "consume" in effect:
-            game_map[ny][nx] = effect["consume"]
+            data.DUNGEON[player["current_map"]]["map"][ny][nx] = effect["consume"]
+
+        if "teleport" in effect:
+            cords = (ny, nx)
+            # Grab all the secret data from the CURRENT map before changing anything
+            stair_data = data.DUNGEON[player["current_map"]]["stairs"][cords]
+
+            # Now update the player using that saved data
+            data.PLAYER["current_map"] = stair_data["target_map"]
+            data.PLAYER["x"] = stair_data["target_x"]
+            data.PLAYER["y"] = stair_data["target_y"]
+
 
     # Update position and return
 
@@ -71,13 +84,13 @@ def check_tile_event(player, new_pos, game_map):
     player["x"], player["y"] = nx, ny
     return player
 
-def update_visibility(fog_map, player, game_map, width, height):
+def update_visibility(fog_map, width, height):
     # Reveal a 1-tile radius
     for dy in [-1, 0, 1]:
         for dx in [-1, 0, 1]:
-            rx, ry = player["x"] + dx, player["y"] + dy
+            rx, ry = data.PLAYER["x"] + dx, data.PLAYER["y"] + dy
             if 0 <= rx < width and 0 <= ry < height:
-                fog_map[ry][rx] = game_map[ry][rx]
+                fog_map[ry][rx] = data.DUNGEON[data.PLAYER["current_map"]]["map"][ry][rx]
     return fog_map
 
 def get_viewport(view, player, radius=2):
