@@ -1,5 +1,6 @@
 import os
 import data
+import random
 
 
 
@@ -116,3 +117,129 @@ def get_viewport(view, radius=2):
             sliced_row = row_list[start_x: start_x + size]
             viewport.append("".join(sliced_row))
     return viewport
+
+
+import random
+
+
+def move_monsters(monsters, view_radius=5):
+    # NESW mapping
+    directions = {1: (0, -1), 2: (0, 1), 3: (1, 0), 4: (-1, 0)}
+
+    for m in monsters:
+        dist_x = abs(m["x"] - data.PLAYER["x"])
+        dist_y = abs(m["y"] - data.PLAYER["y"])
+
+        nx, ny = m["x"], m["y"]
+
+        # 1. HUNTING LOGIC
+        if dist_x <= view_radius and dist_y <= view_radius:
+            if m["x"] < data.PLAYER["x"]:
+                nx += 1
+            elif m["x"] > data.PLAYER["x"]:
+                nx -= 1
+            elif m["y"] < data.PLAYER["y"]:
+                ny += 1
+            elif m["y"] > data.PLAYER["y"]:
+                ny -= 1
+
+        # 2. WANDERING LOGIC (If not hunting)
+        else:
+            num = random.randint(1, 4)
+            dx, dy = directions[num]
+            nx += dx
+            ny += dy
+
+        # 3. VALIDATION (The "is_passable" check)
+        # Use the function we discussed to make sure they don't hit walls!
+        if is_passable(nx, ny, data.PLAYER["current_map"]):
+            m["x"], m["y"] = nx, ny
+
+def place_entities(temp_view, monsters):
+    for m in monsters:
+        mx, my = m["x"], m["y"]
+        if 0 <= my < len(temp_view) and 0 <= mx < len(temp_view[0]):
+            # Only draw the monster if the tile isn't "Fog" (empty space)
+            if temp_view[my][mx] != " ":
+                temp_view[my][mx] = m["marker"]
+
+
+import random
+
+
+def run_battle(player, enemy):
+    print(f"--- BATTLE: {player['marker']} vs {enemy['name']} ---")
+
+    while player["hp"] > 0 and enemy["hp"] > 0:
+        print(f"\nYour HP: {player['hp']} | {enemy['name']} HP: {enemy['hp']}")
+        action = input("Do you (A)ttack or (F)lee? ").lower()
+
+        if action == "a":
+            # Player attacks
+            dmg = random.randint(5, 15)
+            enemy["hp"] -= dmg
+            print(f"You hit the {enemy['name']} for {dmg} damage!")
+        elif action == "f":
+            print("You escaped back to the dungeon!")
+            return "fled"
+        else:
+            print("You stumble, paralyzed by indecision!")
+
+        # Monster attacks back if it's still alive
+        if enemy["hp"] > 0:
+            m_dmg = enemy["dmg"]
+            player["hp"] -= m_dmg
+            print(f"The {enemy['name']} hits you for {m_dmg} damage!")
+
+    if player["hp"] <= 0:
+        return "lost"
+    return "won"
+
+def check_for_combat(monsters):
+    for monster in monsters:
+        if monster["x"] == data.PLAYER["x"] and monster["y"] == data.PLAYER["y"]:
+            return monster # Return the monster we bumped into
+    return None
+
+
+def draw_battle_screen(enemy):
+    clear_screen()
+
+    # 1. Top Right: Monster Stats
+    # 'width' should match your typical terminal width (e.g., 40 characters)
+    width = 40
+    monster_stats = f"{enemy['name']} HP: {enemy['hp']} "
+    print(monster_stats.rjust(width))
+
+    # 2. Middle: Visuals or spacing
+    # Print several empty lines to push the player stats to the bottom
+    for _ in range(10):
+        print()
+
+    # 3. Bottom Left: Hero Stats
+    hero_stats = f"{data.PLAYER['marker']} HP: {data.PLAYER['hp']}"
+    print(hero_stats)
+    print("-" * width)
+
+
+def is_passable(nx, ny, current_map):
+    # 1. BOUNDARY CHECK
+    # Get the height (number of rows) and width (length of first row)
+    height = len(data.DUNGEON[data.PLAYER["current_map"]]["map"])
+    width = len(data.DUNGEON[data.PLAYER["current_map"]]["map"][0])
+
+    # If the coordinate is less than 0 or greater than the max index, it's out of bounds
+    if nx < 0 or nx >= width or ny < 0 or ny >= height:
+        return False
+
+    # 2. WALL CHECK
+    # Now that we know it's in bounds, we can safely look at the character
+    tile = data.DUNGEON[data.PLAYER["current_map"]]["map"][ny][nx]
+
+    # If the tile is a wall, return False
+    if tile == "W" or tile == "#":
+        return False
+
+    # If it passed both checks, the path is clear!
+    return True
+
