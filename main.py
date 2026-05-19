@@ -1,6 +1,7 @@
 import engine
 import data
 import copy
+import random
 
 from engine import check_for_combat, draw_battle_screen
 
@@ -59,7 +60,7 @@ def main():
                 new_pos = (data.PLAYER["x"] + dx, data.PLAYER["y"] + dy)
                 data.PLAYER = engine.check_tile_event(data.PLAYER, new_pos, current_level)
                 engine.move_monsters(monsters)
-                active_enemy = check_for_combat(current_level["monsters"])
+                active_enemy = check_for_combat(monsters)
                 if active_enemy:
                     game_state = "BATTLE"
 
@@ -101,28 +102,11 @@ def main():
                 print("You have perished in the dungeon...")
                 break
             draw_battle_screen(active_enemy)
-            # Run battle logic instead of map logic
-            print(f"A wild {active_enemy['name']} appeared!")
-            action = input("(A)ttack or (R)un? ").lower()
-
-            if action == "a":
-                # Handle combat...
-                active_enemy["hp"] -= 10
-                if active_enemy["hp"] <= 0:
-                    input("Victory!")
-                    first_turn = True
-                    # Remove the monster from the live list
-                    current_level["monsters"].remove(active_enemy)
-                    game_state = "EXPLORE"
-                else:
-                    data.PLAYER["hp"] -= active_enemy["dmg"]
-                    if data.PLAYER["hp"] <= 0:
-                        data.PLAYER["hp"] = 0
-            elif action == "r":
+            if engine.battle(active_enemy, current_level):
+                first_turn = True
                 game_state = "EXPLORE"
-                # Maybe move the player back one step so they don't instantly collide again
-
-    
+            else:
+                engine.battle(active_enemy, current_level)
 main()
 
 

@@ -23,7 +23,7 @@ def move_player():
     if move == "d": return 1, 0
     if move == "q": return -10, -10
     print("Hero ponders about life")
-    input("Press Enter to continue")
+    pause()
     return 0, 0
 
 def clear_screen():
@@ -32,18 +32,20 @@ def clear_screen():
     else:
         os.system('clear')
 
+def pause():
+    input("\nPress Enter to continue...")
+
 def check_tile_event(player, new_pos, current_level):
     nx, ny = new_pos
     current_map = current_level["map"]
     height = len(data.DUNGEON[player["current_map"]]["map"])
     width = len(data.DUNGEON[player["current_map"]]["map"][0])
-
     tile = current_map[ny][nx]
 
     # 1. Boundary Check
     if not (0 <= nx < width and 0 <= ny < height):
         print("The edge of the world blocks you!")
-        input("...")
+        pause()
         return player # Return player unchanged
 
 
@@ -54,7 +56,7 @@ def check_tile_event(player, new_pos, current_level):
         # 1. Handle Blocking immediately
         if effect.get("block"):
             print(effect["msg"])
-            input("...")
+            pause()
             return player 
         player["hp"] += effect.get("hp", 0)
         player["gp"] += effect.get("gp", 0)
@@ -77,7 +79,7 @@ def check_tile_event(player, new_pos, current_level):
             data.PLAYER["y"] = stair_data["target_y"]
             if "msg" in effect:
                 print(effect["msg"])
-                input("...")
+                pause()
             return data.PLAYER
 
 
@@ -86,15 +88,16 @@ def check_tile_event(player, new_pos, current_level):
 
         if "msg" in effect:
             print(effect["msg"])
-            input("...")
+            pause()
     player["x"], player["y"] = nx, ny
     return player
 
-def update_visibility(fog_map, current_map, width, height):
-    # Reveal a 1-tile radius
-    for dy in [-1, 0, 1]:
-        for dx in [-1, 0, 1]:
-            rx, ry = data.PLAYER["x"] + dx, data.PLAYER["y"] + dy
+def update_visibility(fog_map, current_map, width, height, radius=2):
+    px, py = data.PLAYER["x"], data.PLAYER["y"]
+
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            rx, ry = px + dx, py + dy
             if 0 <= rx < width and 0 <= ry < height:
                 fog_map[ry][rx] = current_map[ry][rx]
     return fog_map
@@ -117,10 +120,6 @@ def get_viewport(view, radius=2):
             sliced_row = row_list[start_x: start_x + size]
             viewport.append("".join(sliced_row))
     return viewport
-
-
-import random
-
 
 def move_monsters(monsters, view_radius=5):
     # NESW mapping
@@ -172,7 +171,9 @@ def run_battle(player, enemy):
 
     while player["hp"] > 0 and enemy["hp"] > 0:
         print(f"\nYour HP: {player['hp']} | {enemy['name']} HP: {enemy['hp']}")
-        action = input("Do you (A)ttack or (F)lee? ").lower()
+        action = print("Do you (A)ttack or (F)lee? ").lower()
+
+
 
         if action == "a":
             # Player attacks
@@ -242,4 +243,39 @@ def is_passable(nx, ny, current_map):
 
     # If it passed both checks, the path is clear!
     return True
+
+def battle(active_enemy, current_level):
+    print(f"A wild {active_enemy['name']} appeared!")
+    action = input("(A)ttack or (R)un? ").lower()
+    def atk():
+        data.PLAYER["hp"] -= active_enemy["dmg"]
+        if data.PLAYER["hp"] <= 0:
+            data.PLAYER["hp"] = 0
+            return True
+        return False
+
+    if action == "a":
+        # Handle combat...
+        active_enemy["hp"] -= 10
+        if active_enemy["hp"] <= 0:
+            print("Victory!")
+            pause()
+            # Remove the monster from the live list
+            current_level["monsters"].remove(active_enemy)
+            return True
+
+        else:
+            return atk()
+    elif action == "r":
+        num = random.randint(1, 3)
+        if num == 3:
+            print(f"You managed to get away from the {active_enemy["name"]}")
+            pause()
+            return True
+        else:
+            print(f"The {active_enemy["name"]} wont let you escape")
+            pause()
+            return atk()
+    return False
+
 
