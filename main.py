@@ -1,9 +1,9 @@
 import engine
 import data
 import copy
-import random
 
-from engine import check_for_combat, draw_battle_screen
+
+from engine import check_for_combat, draw_battle_screen, clear_screen
 
 
 def load_level(level_id):
@@ -98,15 +98,9 @@ def main():
             for line in viewport:
                 print(line)
         elif game_state == "BATTLE":
-            if data.PLAYER["hp"] <= 0:
-                print("You have perished in the dungeon...")
-                break
-            draw_battle_screen(active_enemy)
-            if engine.battle(active_enemy, current_level):
-                first_turn = True
-                game_state = "EXPLORE"
-            else:
-                engine.battle(active_enemy, current_level)
+            engine.battle(active_enemy, current_level)
+            first_turn = True
+            game_state = "EXPLORE"
 main()
 
 

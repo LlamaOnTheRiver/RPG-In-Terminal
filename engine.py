@@ -246,36 +246,49 @@ def is_passable(nx, ny, current_map):
 
 def battle(active_enemy, current_level):
     print(f"A wild {active_enemy['name']} appeared!")
-    action = input("(A)ttack or (R)un? ").lower()
-    def atk():
-        data.PLAYER["hp"] -= active_enemy["dmg"]
-        if data.PLAYER["hp"] <= 0:
-            data.PLAYER["hp"] = 0
-            return True
-        return False
+    pause()
+    while True:
+        clear_screen()
+        draw_battle_screen(active_enemy)
+        print(f"What will you do?")
+        action = input("(A)ttack or (R)un? ").lower()
+        def atk():
+            draw_battle_screen(active_enemy)
+            print(f"The mighty {active_enemy['name']} takes a swipe at you!")
+            pause()
+            draw_battle_screen(active_enemy)
+            print(f"{active_enemy['name']} does {active_enemy['dmg']} damage!")
+            pause()
+            data.PLAYER["hp"] -= active_enemy["dmg"]
+            if data.PLAYER["hp"] <= 0:
+                data.PLAYER["hp"] = 0
+                return
 
-    if action == "a":
-        # Handle combat...
-        active_enemy["hp"] -= 10
-        if active_enemy["hp"] <= 0:
-            print("Victory!")
-            pause()
-            # Remove the monster from the live list
-            current_level["monsters"].remove(active_enemy)
-            return True
 
-        else:
-            return atk()
-    elif action == "r":
-        num = random.randint(1, 3)
-        if num == 3:
-            print(f"You managed to get away from the {active_enemy["name"]}")
-            pause()
-            return True
-        else:
-            print(f"The {active_enemy["name"]} wont let you escape")
-            pause()
-            return atk()
-    return False
+        if action == "a":
+            # Handle combat...
+            active_enemy["hp"] -= 10
+            if active_enemy["hp"] <= 0:
+                active_enemy["hp"] = 0
+                draw_battle_screen(active_enemy)
+                print("Victory!")
+                pause()
+                # Remove the monster from the live list
+                current_level["monsters"].remove(active_enemy)
+                return
+
+            else:
+                atk()
+        elif action == "r":
+            num = random.randint(1, 3)
+            if num == 3:
+                print(f"You managed to get away from the {active_enemy["name"]}")
+                pause()
+                current_level["monsters"].remove(active_enemy)
+                return
+            else:
+                print(f"The {active_enemy["name"]} wont let you escape")
+                pause()
+                atk()
 
 
