@@ -5,6 +5,25 @@ import copy
 import items
 
 
+def msg(text, style="standard"):
+    # Define different border characters for different event types
+    styles = {
+        "standard": ("-", "|"),
+        "combat": ("*", "!"),
+        "loot": ("=", "$"),
+        "error": ("!", "X")
+    }
+
+    border_char, side_char = styles.get(style, ("-", "|"))
+
+    # Calculate the width based on the text length
+    width = len(text) + 4
+
+    # Print the "pretty" box
+    print(border_char * width)
+    print(f"{side_char} {text} {side_char}")
+    print(border_char * width)
+
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     # 1. Use the level_id we were handed!
     if level_id not in data.visited_levels:
@@ -431,3 +450,30 @@ def show_inventory():
                 item_names = list(data.PLAYER["inventory"].keys())
                 if len(item_names) <= page * items_per_page and page > 0:
                     page -= 1
+def xp_screen(active_monster):
+    clear_screen()
+    xp = 0.25 * active_monster["hp"] * active_monster["dmg"]
+    gp = random.randint(1,4)
+    if gp == 1:
+        gp = 0.5 * xp
+    if gp == 2:
+        gp = 0.75 * xp
+    if gp == 3:
+        gp = xp
+    if gp == 4:
+        gp = 1.25 * xp
+
+
+
+def get_random_loot():
+    # random.choices returns a list based on the weights provided
+    # population: the list of categories to choose from
+    # weights: the list of chances corresponding to those categories
+    rarities = list(data.RARITY_WEIGHTS.keys())
+    weights = list(data.RARITY_WEIGHTS.values())
+    selected_rarity = random.choices(rarities, weights=weights, k=1)[0]
+
+    # Pick a random item from the chosen category
+    items_to_pick_from = data.LOOT_DATA[selected_rarity]
+    return random.choice(items_to_pick_from)
+

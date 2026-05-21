@@ -70,7 +70,7 @@ def main():
             game_state = "EXPLORE"
         elif game_state == "INVENTORY":
             engine.show_inventory()
-            print("YAY")
+            engine.msg("YAY", "loot")
             engine.pause()
             game_state = "EXPLORE"
 

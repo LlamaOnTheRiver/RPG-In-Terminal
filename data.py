@@ -53,6 +53,13 @@ PLAYER = {
         "gp": 0,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
+        "sanity": 100,
+        "stats": {
+            "Dread": 0,
+            "Instinct": 0,
+            "Vigor": 0,
+            "Cunning": 0
+        },
         "inventory": {
             "Health Potion": 2,
             "Bread": 1,
@@ -65,3 +72,16 @@ PLAYER = {
 }
 visited_levels = {}
 
+LOOT_DATA = {
+    "common": ["Rusty Sword", "Small Health Potion", "Leather Scraps"],
+    "rare": ["Steel Longsword", "Large Health Potion", "Iron Shield"],
+    "legendary": ["Excalibur", "Dragon Scale Armor"]
+}
+
+# Define the weight (chance) for each rarity
+# In this example, 'common' is 70 times more likely than 'legendary'
+RARITY_WEIGHTS = {
+    "common": 70,
+    "rare": 25,
+    "legendary": 5
+}
