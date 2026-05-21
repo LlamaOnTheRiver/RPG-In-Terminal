@@ -1,8 +1,28 @@
 import os
 import data
 import random
+import copy
 
 
+def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
+    # 1. Use the level_id we were handed!
+    if level_id not in data.visited_levels:
+        data.visited_levels[level_id] = copy.deepcopy(data.DUNGEON[level_id]["map"])
+
+    # 2. Get the map and calculate dimensions
+    current_map = data.visited_levels[level_id]
+    h = len(current_map)
+    w = len(current_map[0]) if h > 0 else 0
+
+    # 3. Get monsters for THIS specific level_id
+    fresh_monsters = copy.deepcopy(data.DUNGEON[level_id]["monsters"])
+
+    return {
+        "map": current_map,
+        "monsters": fresh_monsters,
+        "width": w,
+        "height": h
+    }
 
 def place_player_on_map(temp_view):
         px = data.PLAYER["x"]
@@ -13,18 +33,23 @@ def place_player_on_map(temp_view):
             temp_view[py][px] = colored_marker
 
         return temp_view
-    
+
 
 def move_player():
+    # Remove the while loop and the drawing from here!
     move = input("Move (wasd) | q (quit): ").strip().lower()
+
     if move == "w": return 0, -1
     if move == "s": return 0, 1
     if move == "a": return -1, 0
     if move == "d": return 1, 0
     if move == "q": return -10, -10
+
+    # If they hit a random key
     print("Hero ponders about life")
     pause()
     return 0, 0
+
 
 def clear_screen():
     if os.name == 'nt':
@@ -35,71 +60,17 @@ def clear_screen():
 def pause():
     input("\nPress Enter to continue...")
 
-def check_tile_event(player, new_pos, current_level):
-    nx, ny = new_pos
-    current_map = current_level["map"]
-    height = len(data.DUNGEON[player["current_map"]]["map"])
-    width = len(data.DUNGEON[player["current_map"]]["map"][0])
-    tile = current_map[ny][nx]
-
-    # 1. Boundary Check
-    if not (0 <= nx < width and 0 <= ny < height):
-        print("The edge of the world blocks you!")
-        pause()
-        return player # Return player unchanged
-
-
-    
-    if tile in data.TILE_EFFECTS:
-        effect = data.TILE_EFFECTS[tile]
-        
-        # 1. Handle Blocking immediately
-        if effect.get("block"):
-            print(effect["msg"])
-            pause()
-            return player 
-        player["hp"] += effect.get("hp", 0)
-        player["gp"] += effect.get("gp", 0)
-        
-        # Clamp HP
-        player["hp"] = min(player["max_hp"], player["hp"])
-
-        # 4. Handle Consuming
-        if "consume" in effect:
-            current_map[ny][nx] = effect["consume"]
-
-        if "teleport" in effect:
-            cords = (ny, nx)
-            # Grab all the secret data from the CURRENT map before changing anything
-            stair_data = data.DUNGEON[player["current_map"]]["stairs"][cords]
-
-            # Now update the player using that saved data
-            data.PLAYER["current_map"] = stair_data["target_map"]
-            data.PLAYER["x"] = stair_data["target_x"]
-            data.PLAYER["y"] = stair_data["target_y"]
-            if "msg" in effect:
-                print(effect["msg"])
-                pause()
-            return data.PLAYER
-
-
-
-    # Update position and return
-
-        if "msg" in effect:
-            print(effect["msg"])
-            pause()
-    player["x"], player["y"] = nx, ny
-    return player
-
-def update_visibility(fog_map, current_map, width, height, radius=2):
+def update_visibility(fog_map, current_level, radius=2):
+    w = current_level['width']
+    h = current_level['height']
+    grid = current_level['map']
     px, py = data.PLAYER["x"], data.PLAYER["y"]
 
     for dy in range(-radius, radius + 1):
         for dx in range(-radius, radius + 1):
             rx, ry = px + dx, py + dy
-            if 0 <= rx < width and 0 <= ry < height:
-                fog_map[ry][rx] = current_map[ry][rx]
+            if 0 <= rx < w and 0 <= ry < h:
+                fog_map[ry][rx] = grid[ry][rx]
     return fog_map
 
 
@@ -121,10 +92,10 @@ def get_viewport(view, radius=2):
             viewport.append("".join(sliced_row))
     return viewport
 
-def move_monsters(monsters, view_radius=5):
+def move_monsters(current_level, view_radius=3):
+    monsters = current_level["monsters"]
     # NESW mapping
     directions = {1: (0, -1), 2: (0, 1), 3: (1, 0), 4: (-1, 0)}
-
     for m in monsters:
         dist_x = abs(m["x"] - data.PLAYER["x"])
         dist_y = abs(m["y"] - data.PLAYER["y"])
@@ -151,7 +122,7 @@ def move_monsters(monsters, view_radius=5):
 
         # 3. VALIDATION (The "is_passable" check)
         # Use the function we discussed to make sure they don't hit walls!
-        if is_passable(nx, ny, data.PLAYER["current_map"]):
+        if is_passable(nx, ny, current_level):
             m["x"], m["y"] = nx, ny
 
 def place_entities(temp_view, monsters):
@@ -162,16 +133,12 @@ def place_entities(temp_view, monsters):
             if temp_view[my][mx] != " ":
                 temp_view[my][mx] = m["marker"]
 
-
-import random
-
-
 def run_battle(player, enemy):
     print(f"--- BATTLE: {player['marker']} vs {enemy['name']} ---")
 
     while player["hp"] > 0 and enemy["hp"] > 0:
         print(f"\nYour HP: {player['hp']} | {enemy['name']} HP: {enemy['hp']}")
-        action = print("Do you (A)ttack or (F)lee? ").lower()
+        action = input("Do you (A)ttack or (F)lee? ").lower()
 
 
 
@@ -223,25 +190,19 @@ def draw_battle_screen(enemy):
     print("-" * width)
 
 
-def is_passable(nx, ny, current_map):
+def is_passable(nx, ny, current_level):
+    # Access everything from the one dictionary
+    w = current_level["width"]
+    h = current_level["height"]
+    m_grid = current_level["map"]
+
     # 1. BOUNDARY CHECK
-    # Get the height (number of rows) and width (length of first row)
-    height = len(data.DUNGEON[data.PLAYER["current_map"]]["map"])
-    width = len(data.DUNGEON[data.PLAYER["current_map"]]["map"][0])
-
-    # If the coordinate is less than 0 or greater than the max index, it's out of bounds
-    if nx < 0 or nx >= width or ny < 0 or ny >= height:
+    if nx < 0 or nx >= w or ny < 0 or ny >= h:
         return False
 
-    # 2. WALL CHECK
-    # Now that we know it's in bounds, we can safely look at the character
-    tile = data.DUNGEON[data.PLAYER["current_map"]]["map"][ny][nx]
-
-    # If the tile is a wall, return False
-    if tile == "W" or tile == "#":
+    if m_grid[ny][nx] in ["W", "#"]:
         return False
 
-    # If it passed both checks, the path is clear!
     return True
 
 def battle(active_enemy, current_level):
@@ -259,22 +220,22 @@ def battle(active_enemy, current_level):
             draw_battle_screen(active_enemy)
             print(f"{active_enemy['name']} does {active_enemy['dmg']} damage!")
             pause()
-            data.PLAYER["hp"] -= active_enemy["dmg"]
-            if data.PLAYER["hp"] <= 0:
-                data.PLAYER["hp"] = 0
+            data.PLAYER['hp'] -= active_enemy['dmg']
+            if data.PLAYER['hp'] <= 0:
+                data.PLAYER['hp'] = 0
                 return
 
 
         if action == "a":
             # Handle combat...
-            active_enemy["hp"] -= 10
-            if active_enemy["hp"] <= 0:
-                active_enemy["hp"] = 0
+            active_enemy['hp'] -= 10
+            if active_enemy['hp'] <= 0:
+                active_enemy['hp'] = 0
                 draw_battle_screen(active_enemy)
                 print("Victory!")
                 pause()
                 # Remove the monster from the live list
-                current_level["monsters"].remove(active_enemy)
+                current_level['monsters'].remove(active_enemy)
                 return
 
             else:
@@ -284,7 +245,8 @@ def battle(active_enemy, current_level):
             if num == 3:
                 print(f"You managed to get away from the {active_enemy["name"]}")
                 pause()
-                current_level["monsters"].remove(active_enemy)
+                if active_enemy in current_level['monsters']:
+                    current_level['monsters'].remove(active_enemy)
                 return
             else:
                 print(f"The {active_enemy["name"]} wont let you escape")
@@ -292,3 +254,100 @@ def battle(active_enemy, current_level):
                 atk()
 
 
+def draw_exploration_screen(current_level, fog_map):
+    update_visibility(fog_map, current_level)
+    m = current_level['monsters']
+    # 2. Create a temporary copy of the fog to draw entities on
+    temp_view = [list(row) for row in fog_map]
+
+    # 3. Layer the monsters and player on top
+    place_entities(temp_view, m)
+    view = place_player_on_map(temp_view)
+
+    # 4. Get the final cropped view
+    viewport = get_viewport(view)
+
+    # ... then clear_screen() and print the viewport ...
+
+    # 2. Clear and Print
+    clear_screen()
+
+    # Health coloring logic
+    color = "\033[92m"  # Green
+    if data.PLAYER["hp"] <= 25:
+        color = "\033[91m"  # Red
+    elif data.PLAYER["hp"] <= 60:
+        color = "\033[93m"  # Yellow
+    reset = "\033[0m"
+
+    print(f"{color}HP: {data.PLAYER['hp']}{reset} | GP:{data.PLAYER['gp']} | Map:{data.PLAYER['current_map']}")
+    print("~" * 40)
+
+    for line in viewport:
+        print(line)
+
+def load_level(level_id):
+    # .deepcopy() creates a brand new version of everything,
+    # including the nested lists, so the original stays safe!
+    return copy.deepcopy(data.DUNGEON[level_id])
+
+def check_tile_event(player, new_pos, current_level):
+    nx, ny = new_pos
+
+    # 1. Use the data from current_level
+    current_map = current_level["map"]
+    width = current_level["width"]
+    height = current_level["height"]
+
+    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
+    if not (0 <= nx < width and 0 <= ny < height):
+        print("The edge of the world blocks you!")
+        pause()
+        return player
+
+        # 3. Get the tile now that we know we are in bounds
+    tile = current_map[ny][nx]
+    if not (0 <= nx < width and 0 <= ny < height):
+        print("The edge of the world blocks you!")
+        pause()
+        return player  # Return player unchanged
+
+    if tile in data.TILE_EFFECTS:
+        effect = data.TILE_EFFECTS[tile]
+
+        # 1. Handle Blocking immediately
+        if effect.get("block"):
+            print(effect["msg"])
+            pause()
+            return player
+        player["hp"] += effect.get("hp", 0)
+        player["gp"] += effect.get("gp", 0)
+
+        # Clamp HP
+        player["hp"] = min(player["max_hp"], player["hp"])
+
+        # 4. Handle Consuming
+        if "consume" in effect:
+            current_map[ny][nx] = effect["consume"]
+
+        if "teleport" in effect:
+            cords = (ny, nx)
+            # Grab all the secret data from the CURRENT map before changing anything
+            stair_data = data.DUNGEON[player["current_map"]]["stairs"][cords]
+
+            # Now update the player using that saved data
+            data.PLAYER["current_map"] = stair_data["target_map"]
+            data.PLAYER["x"] = stair_data["target_x"]
+            data.PLAYER["y"] = stair_data["target_y"]
+            if "msg" in effect:
+                print(effect["msg"])
+                pause()
+            return data.PLAYER
+
+        # Update position and return
+
+        if "msg" in effect:
+            print(effect["msg"])
+            pause()
+    player["x"], player["y"] = nx, ny
+    return player

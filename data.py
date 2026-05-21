@@ -29,9 +29,9 @@ DUNGEON = {
         "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
                   },
         "monsters": [
-            {"name": "Ghoul", "x": 1, "y": 2, "marker": "G", "hp": 25, "dmg": 10},
-            {"name": "Goblin", "x": 4, "y": 0, "marker": "M", "hp": 25, "dmg": 5},
-            {"name": "Goblin", "x": 0, "y": 2, "marker": "S", "hp": 25, "dmg": 5}
+            {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 10},
+            {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5},
+            {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5}
         ]
     }
 }
@@ -52,6 +52,7 @@ PLAYER = {
         "hp": 100,
         "gp": 0,
         "marker": "\033[94mP\033[0m",
-        "max_hp": 200
+        "max_hp": 200,
 }
+visited_levels = {}
 
