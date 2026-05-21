@@ -53,6 +53,15 @@ PLAYER = {
         "gp": 0,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
+        "inventory": {
+            "Health Potion": 2,
+            "Bread": 1,
+            "Hair": 6,
+            "Sword": 3,
+            "Water": 4,
+            "Gold": 5,
+            "Poop": 3
+        }
 }
 visited_levels = {}
 

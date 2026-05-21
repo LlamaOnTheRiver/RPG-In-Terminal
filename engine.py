@@ -2,6 +2,7 @@ import os
 import data
 import random
 import copy
+import items
 
 
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
@@ -13,6 +14,7 @@ def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     current_map = data.visited_levels[level_id]
     h = len(current_map)
     w = len(current_map[0]) if h > 0 else 0
+    inv = data.PLAYER["inventory"]
 
     # 3. Get monsters for THIS specific level_id
     fresh_monsters = copy.deepcopy(data.DUNGEON[level_id]["monsters"])
@@ -21,7 +23,8 @@ def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
         "map": current_map,
         "monsters": fresh_monsters,
         "width": w,
-        "height": h
+        "height": h,
+        "inv": inv
     }
 
 def place_player_on_map(temp_view):
@@ -37,13 +40,14 @@ def place_player_on_map(temp_view):
 
 def move_player():
     # Remove the while loop and the drawing from here!
-    move = input("Move (wasd) | q (quit): ").strip().lower()
+    move = input("Move (wasd) | q (quit) | i(Inventory):").strip().lower()
 
     if move == "w": return 0, -1
     if move == "s": return 0, 1
     if move == "a": return -1, 0
     if move == "d": return 1, 0
     if move == "q": return -10, -10
+    if move == "i": return 10, 10
 
     # If they hit a random key
     print("Hero ponders about life")
@@ -351,3 +355,79 @@ def check_tile_event(player, new_pos, current_level):
             pause()
     player["x"], player["y"] = nx, ny
     return player
+
+
+def use_item(item_name):
+    # Check the registry in the items file
+    if item_name in items.ITEM_REGISTRY:
+        effect_function = items.ITEM_REGISTRY[item_name]
+
+        # Execute the function
+        effect_function()
+
+        # Handle the inventory subtraction
+        data.PLAYER["inventory"][item_name] -= 1
+        if data.PLAYER["inventory"][item_name] <= 0:
+            del data.PLAYER["inventory"][item_name]
+    else:
+        print(f"The {item_name} is a curious object, but you can't use it now.")
+
+    pause()
+
+
+def show_inventory():
+    page = 0
+    items_per_page = 6
+
+    while True:
+        clear_screen()
+        print("=== INVENTORY ===")
+
+        # 1. Get the list of names
+        item_names = list(sorted(data.PLAYER["inventory"].keys()))
+        total_items = len(item_names)
+
+        if total_items == 0:
+            print("Your pack is empty.")
+            # Print 5 empty lines because we used 1 for the empty message
+            for _ in range(items_per_page - 1):
+                print()
+        else:
+            start_idx = page * items_per_page
+            end_idx = start_idx + items_per_page
+            page_items = item_names[start_idx:end_idx]
+
+            # 1. Print the items we actually have
+            for i, name in enumerate(page_items, start_idx + 1):
+                count = data.PLAYER["inventory"][name]
+                print(f"{i}. {name[:20]:<20} x{count}")
+
+            # 2. PADDING: Print blank lines for the remaining "slots"
+            # If we only printed 2 items, this prints 4 empty lines
+            for _ in range(items_per_page - len(page_items)):
+                print()
+
+            total_pages = (total_items - 1) // items_per_page + 1
+            print(f"\n--- Page {page + 1} of {total_pages} ---")
+
+        print("=" * 18)
+        print("(A) Prev | (D) Next | (B)ack")
+
+        choice = input("> ").lower()
+
+        if choice == 'b':
+            break
+        elif choice == 'a' and page > 0:
+            page -= 1
+        elif choice == 'd' and (page + 1) * items_per_page < total_items:
+            page += 1
+        elif choice.isdigit():
+            selection = int(choice)
+            if 1 <= selection <= total_items:
+                chosen_item = item_names[selection - 1]
+                use_item(chosen_item)
+                # If the item was used up and removed, we might need to adjust the page
+                # Refresh names to check if we still have items
+                item_names = list(data.PLAYER["inventory"].keys())
+                if len(item_names) <= page * items_per_page and page > 0:
+                    page -= 1

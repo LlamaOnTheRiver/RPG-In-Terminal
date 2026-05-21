@@ -29,7 +29,10 @@ def main():
 
             # 4. Input
             dx, dy = engine.move_player()
-            if dx == -10 and dy == -10: break  # Quit
+            if dx == -10 and dy == -10: break # Quit
+            if dx == 10 and dy == 10:
+                game_state = "INVENTORY"
+                continue
 
             # 5. Turn Logic (Only proceed if player moved)
             if dx == 0 and dy == 0:
@@ -64,6 +67,11 @@ def main():
 
         elif game_state == "BATTLE":
             engine.battle(active_enemy, current_level)
+            game_state = "EXPLORE"
+        elif game_state == "INVENTORY":
+            engine.show_inventory()
+            print("YAY")
+            engine.pause()
             game_state = "EXPLORE"
 
 
