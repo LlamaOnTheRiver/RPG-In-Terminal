@@ -81,7 +81,7 @@ MONSTERS = {
     "Rat": {
         "name": "Rat",
         "hp": 15,
-        "dmg": 5,
+        "dmg": 75,
         "madness": 2,
         "intro":["The rat looks hideously deformed.", "It starts oozing yellowish thick liquid from it's pours"],
         "cry":["The oily rat lunges at you", "and starts gnawing on your flesh."],

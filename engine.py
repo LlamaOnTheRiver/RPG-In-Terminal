@@ -468,9 +468,14 @@ def xp_screen(enemy):
     multipliers = [0.5, 0.75, 1.0, 1.25]
     gp = int(random.choice(multipliers) * xp)
     loot = get_random_loot(enemy)
-    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!")
-    data.PLAYER["gp"] += gp
     data.PLAYER["xp"] += xp
+    xp_msg = ""
+    if data.PLAYER["xp"] >= (data.PLAYER["level"] + 1) * 100:
+        data.PLAYER["level"] += 1
+        data.PLAYER["xp"] = 0
+        xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
+    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", xp_msg)
+    data.PLAYER["gp"] += gp
     data.PLAYER["sanity"] -= enemy["madness"]
     if loot in data.PLAYER["inventory"]:
         data.PLAYER["inventory"][loot] += 1
