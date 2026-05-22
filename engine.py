@@ -11,7 +11,8 @@ def msg(text, style="standard", text1="", text2="", text3=""):
         "standard": ("-", "|"),
         "combat": ("*", "!"),
         "loot": ("=", "$"),
-        "error": ("!", "X")
+        "error": ("!", "X"),
+        "death": ("X", "X")
     }
 
     border_char, side_char = styles.get(style, ("-", "|"))
@@ -206,6 +207,15 @@ def battle(active_enemy, current_level):
     msg(f"A wild {active_enemy['name']} appeared!", "battle")
     pause()
     enemy = data.MONSTERS[active_enemy["name"]]
+    # Extract all lines after the first one
+    # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
+    extra_lines = enemy["intro"][1:4]
+
+    clear_screen()
+
+    # Unpack the list into the optional parameters
+    msg(enemy["intro"][0], "battle", *extra_lines)
+    pause()
     temp_hp = enemy['hp']
     while True:
         clear_screen()
@@ -214,7 +224,12 @@ def battle(active_enemy, current_level):
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
             draw_battle_screen(enemy, temp_hp)
-            msg(f"The mighty {enemy['name']} takes a swipe at you!", "battle")
+            # Extract all lines after the first one
+            # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
+            cry_lines = enemy["cry"][1:4]
+
+            # Unpack the list into the optional parameters
+            msg(enemy["cry"][0], "battle", *cry_lines)
             pause()
             draw_battle_screen(enemy, temp_hp)
             msg(f"{enemy['name']} does {enemy['dmg']} damage!", "battle")
@@ -222,7 +237,8 @@ def battle(active_enemy, current_level):
             data.PLAYER['hp'] -= enemy['dmg']
             if data.PLAYER['hp'] <= 0:
                 data.PLAYER['hp'] = 0
-                return
+                return True
+            return False
 
 
         if action == "a":
@@ -238,7 +254,8 @@ def battle(active_enemy, current_level):
                 return
 
             else:
-                atk()
+                if atk():
+                    return
         elif action == "r":
             num = random.randint(1, 3)
             if num == 3:
@@ -250,7 +267,8 @@ def battle(active_enemy, current_level):
             else:
                 msg(f"The {enemy["name"]} wont let you escape", "battle")
                 pause()
-                atk()
+                if atk():
+                    return
 
 def sanity_bar():
     num = data.PLAYER['sanity'] // 10
@@ -452,6 +470,7 @@ def xp_screen(enemy):
     msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!")
     data.PLAYER["gp"] += gp
     data.PLAYER["xp"] += xp
+    data.PLAYER["sanity"] -= enemy["madness"]
     if loot in data.PLAYER["inventory"]:
         data.PLAYER["inventory"][loot] += 1
     else:
@@ -472,3 +491,9 @@ def get_random_loot(enemy):
     items_to_pick_from = data.LOOT_DATA[selected_rarity]
     return random.choice(items_to_pick_from)
 
+def death_check():
+    if data.PLAYER['hp'] <= 0:
+        return "death"
+    elif data.PLAYER['sanity'] <= 0:
+        return "sanity"
+    return None

@@ -19,13 +19,24 @@ def main():
 
     while True:
         if game_state == "EXPLORE":
+            if engine.death_check() == "death":
+                engine.clear_screen()
+                engine.msg("Your time has not yet come.","death", "On your feet warrior.")
+                engine.pause()
+                data.PLAYER['hp'] = data.PLAYER['max_hp']
+                data.PLAYER['gp'] = int(data.PLAYER['gp'] * 0.8)
+                data.PLAYER['current_map'] = 1
+                data.PLAYER['x'] = 1
+                data.PLAYER['y'] = 1
+                data.PLAYER['sanity'] -= 30
+                data.visited_levels = {}
+                continue
+            elif engine.death_check() == "sanity":
+                break
+
+
             # 2. Draw the Screen
             engine.draw_exploration_screen(current_level, fog_map)
-
-            # 3. Check for Death
-            if data.PLAYER["hp"] <= 0:
-                print("You have perished...")
-                break
 
             # 4. Input
             dx, dy = engine.move_player()
