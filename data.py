@@ -9,8 +9,8 @@ DUNGEON = {
             (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
         },
         "monsters": [
-            {"name": "rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
-            {"name": "rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
+            {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
+            {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
 ]
     },
     2: {
@@ -75,6 +75,7 @@ PLAYER = {
 
 MONSTERS = {
     "Rat": {
+        "name": "Rat",
         "hp": 15,
         "dmg": 5,
         "madness_yield": 2,

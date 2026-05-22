@@ -160,33 +160,6 @@ def place_entities(temp_view, monsters):
             if temp_view[my][mx] != " ":
                 temp_view[my][mx] = m["marker"]
 
-def run_battle(player, enemy):
-    msg(f"--- BATTLE: {player['marker']} vs {enemy['name']} ---", "battle")
-    while player["hp"] > 0 and enemy["hp"] > 0:
-        print(f"\nYour HP: {player['hp']} | {enemy['name']} HP: {enemy['hp']}")
-        action = input("Do you (A)ttack or (F)lee? ").lower()
-
-        if action == "a":
-            # Player attacks
-            dmg = random.randint(5, 15)
-            enemy["hp"] -= dmg
-            msg(f"You hit the {enemy['name']} for {dmg} damage!", "battle")
-        elif action == "f":
-            msg("You escaped back to the dungeon!", "battle")
-            return "fled"
-        else:
-            msg("You stumble, paralyzed by indecision!", "battle")
-
-        # Monster attacks back if it's still alive
-        if enemy["hp"] > 0:
-            m_dmg = enemy["dmg"]
-            player["hp"] -= m_dmg
-            msg(f"The {enemy['name']} hits you for {m_dmg} damage!", "battle")
-
-    if player["hp"] <= 0:
-        return "lost"
-    return "won"
-
 def check_for_combat(monsters):
     for monster in monsters:
         if monster["x"] == data.PLAYER["x"] and monster["y"] == data.PLAYER["y"]:
@@ -194,13 +167,13 @@ def check_for_combat(monsters):
     return None
 
 
-def draw_battle_screen(enemy):
+def draw_battle_screen(enemy, temp_hp):
     clear_screen()
 
     # 1. Top Right: Monster Stats
     # 'width' should match your typical terminal width (e.g., 40 characters)
     width = 40
-    monster_stats = f"{enemy['name']} HP: {enemy['hp']} "
+    monster_stats = f"{enemy['name']} HP: {temp_hp} "
     print(monster_stats.rjust(width))
 
     # 2. Middle: Visuals or spacing
@@ -232,22 +205,21 @@ def is_passable(nx, ny, current_level):
 def battle(active_enemy, current_level):
     msg(f"A wild {active_enemy['name']} appeared!", "battle")
     pause()
+    enemy = data.MONSTERS[active_enemy["name"]]
+    temp_hp = enemy['hp']
     while True:
         clear_screen()
-        draw_battle_screen(active_enemy)
-        monster_hp = active_enemy["hp"]
-        monster_atk = active_enemy["dmg"]
-        stats = [monster_hp, monster_atk]
+        draw_battle_screen(enemy, temp_hp)
         msg(f"What will you do?", "battle")
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
-            draw_battle_screen(active_enemy)
-            msg(f"The mighty {active_enemy['name']} takes a swipe at you!", "battle")
+            draw_battle_screen(enemy, temp_hp)
+            msg(f"The mighty {enemy['name']} takes a swipe at you!", "battle")
             pause()
-            draw_battle_screen(active_enemy)
-            msg(f"{active_enemy['name']} does {active_enemy['dmg']} damage!", "battle")
+            draw_battle_screen(enemy, temp_hp)
+            msg(f"{enemy['name']} does {enemy['dmg']} damage!", "battle")
             pause()
-            data.PLAYER['hp'] -= active_enemy['dmg']
+            data.PLAYER['hp'] -= enemy['dmg']
             if data.PLAYER['hp'] <= 0:
                 data.PLAYER['hp'] = 0
                 return
@@ -255,11 +227,11 @@ def battle(active_enemy, current_level):
 
         if action == "a":
             # Handle combat...
-            active_enemy['hp'] -= 10
-            if active_enemy['hp'] <= 0:
-                active_enemy['hp'] = 0
-                draw_battle_screen(active_enemy)
-                xp_screen(stats)
+            temp_hp -= 10
+            if temp_hp <= 0:
+                temp_hp = 0
+                draw_battle_screen(enemy, temp_hp)
+                xp_screen(enemy)
                 pause()
                 # Remove the monster from the live list
                 current_level['monsters'].remove(active_enemy)
@@ -270,15 +242,16 @@ def battle(active_enemy, current_level):
         elif action == "r":
             num = random.randint(1, 3)
             if num == 3:
-                msg(f"You managed to get away from the {active_enemy["name"]}", "battle")
+                msg(f"You managed to get away from the {enemy["name"]}", "battle")
                 pause()
                 if active_enemy in current_level['monsters']:
                     current_level['monsters'].remove(active_enemy)
                 return
             else:
-                msg(f"The {active_enemy["name"]} wont let you escape", "battle")
+                msg(f"The {enemy["name"]} wont let you escape", "battle")
                 pause()
                 atk()
+
 def sanity_bar():
     num = data.PLAYER['sanity'] // 10
     san = ((10 - num) * "-") + (num * "#")
@@ -341,14 +314,14 @@ def check_tile_event(player, new_pos, current_level):
 
     # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
     if not (0 <= nx < width and 0 <= ny < height):
-        print("The edge of the world blocks you!")
+        msg("The edge of the world blocks you!")
         pause()
         return player
 
         # 3. Get the tile now that we know we are in bounds
     tile = current_map[ny][nx]
     if not (0 <= nx < width and 0 <= ny < height):
-        print("The edge of the world blocks you!")
+        msg("The edge of the world blocks you!")
         pause()
         return player  # Return player unchanged
 
@@ -357,7 +330,7 @@ def check_tile_event(player, new_pos, current_level):
 
         # 1. Handle Blocking immediately
         if effect.get("block"):
-            print(effect["msg"])
+            msg(effect["msg"])
             pause()
             return player
         player["hp"] += effect.get("hp", 0)
@@ -380,14 +353,14 @@ def check_tile_event(player, new_pos, current_level):
             data.PLAYER["x"] = stair_data["target_x"]
             data.PLAYER["y"] = stair_data["target_y"]
             if "msg" in effect:
-                print(effect["msg"])
+                msg(effect["msg"])
                 pause()
             return data.PLAYER
 
         # Update position and return
 
         if "msg" in effect:
-            print(effect["msg"])
+            msg(effect["msg"])
             pause()
     player["x"], player["y"] = nx, ny
     return player
@@ -406,7 +379,7 @@ def use_item(item_name):
         if data.PLAYER["inventory"][item_name] <= 0:
             del data.PLAYER["inventory"][item_name]
     else:
-        print(f"The {item_name} is a curious object, but you can't use it now.")
+        msg(f"The {item_name} is a curious object, but you can't use it now.")
 
     pause()
 
@@ -425,7 +398,7 @@ def show_inventory():
         total_items = len(item_names)
 
         if total_items == 0:
-            print("Your pack is empty.")
+            msg("Your pack is empty.")
             # Print 5 empty lines because we used 1 for the empty message
             for _ in range(items_per_page - 1):
                 print()
@@ -468,15 +441,14 @@ def show_inventory():
                 item_names = list(data.PLAYER["inventory"].keys())
                 if len(item_names) <= page * items_per_page and page > 0:
                     page -= 1
-def xp_screen(stats):
+def xp_screen(enemy):
     # Calculate base XP based on monster toughness
-    print(stats[0], stats[1])
-    xp = int(0.25 * stats[0] * stats[1])
+    xp = int(0.25 * enemy['dmg'] * enemy['hp'])
 
     # GP is a randomized portion of the "effort" (XP) spent
     multipliers = [0.5, 0.75, 1.0, 1.25]
     gp = int(random.choice(multipliers) * xp)
-    loot = get_random_loot()
+    loot = get_random_loot(enemy)
     msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!")
     data.PLAYER["gp"] += gp
     data.PLAYER["xp"] += xp
@@ -488,12 +460,12 @@ def xp_screen(stats):
 
 
 
-def get_random_loot():
+def get_random_loot(enemy):
     # random.choices returns a list based on the weights provided
     # population: the list of categories to choose from
     # weights: the list of chances corresponding to those categories
-    rarities = list(data.RARITY_WEIGHTS.keys())
-    weights = list(data.RARITY_WEIGHTS.values())
+    rarities = list(enemy['loot_weights'].keys())
+    weights = list(enemy['loot_weights'].values())
     selected_rarity = random.choices(rarities, weights=weights, k=1)[0]
 
     # Pick a random item from the chosen category
