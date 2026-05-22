@@ -51,6 +51,7 @@ PLAYER = {
         "current_map": 1,
         "hp": 100,
         "gp": 0,
+        "xp": 0,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
         "sanity": 100,

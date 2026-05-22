@@ -5,7 +5,7 @@ import copy
 import items
 
 
-def msg(text, style="standard"):
+def msg(text, style="standard", text1="", text2="", text3=""):
     # Define different border characters for different event types
     styles = {
         "standard": ("-", "|"),
@@ -17,12 +17,16 @@ def msg(text, style="standard"):
     border_char, side_char = styles.get(style, ("-", "|"))
 
     # Calculate the width based on the text length
-    width = len(text) + 4
+    width = max(len(text), len(text1), len(text2), len(text3))
+
 
     # Print the "pretty" box
-    print(border_char * width)
-    print(f"{side_char} {text} {side_char}")
-    print(border_char * width)
+    print(border_char * (width + 4))
+    print(f"{side_char} {text.ljust(width)} {side_char}")
+    if text1: print(f"{side_char} {text1.ljust(width)} {side_char}")
+    if text2: print(f"{side_char} {text2.ljust(width)} {side_char}")
+    if text3: print(f"{side_char} {text3.ljust(width)} {side_char}")
+    print(border_char * (width + 4))
 
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     # 1. Use the level_id we were handed!
@@ -234,6 +238,9 @@ def battle(active_enemy, current_level):
     while True:
         clear_screen()
         draw_battle_screen(active_enemy)
+        monster_hp = active_enemy["hp"]
+        monster_atk = active_enemy["dmg"]
+        stats = [monster_hp, monster_atk]
         print(f"What will you do?")
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
@@ -255,7 +262,7 @@ def battle(active_enemy, current_level):
             if active_enemy['hp'] <= 0:
                 active_enemy['hp'] = 0
                 draw_battle_screen(active_enemy)
-                print("Victory!")
+                xp_screen(stats)
                 pause()
                 # Remove the monster from the live list
                 current_level['monsters'].remove(active_enemy)
@@ -450,18 +457,23 @@ def show_inventory():
                 item_names = list(data.PLAYER["inventory"].keys())
                 if len(item_names) <= page * items_per_page and page > 0:
                     page -= 1
-def xp_screen(active_monster):
-    clear_screen()
-    xp = 0.25 * active_monster["hp"] * active_monster["dmg"]
-    gp = random.randint(1,4)
-    if gp == 1:
-        gp = 0.5 * xp
-    if gp == 2:
-        gp = 0.75 * xp
-    if gp == 3:
-        gp = xp
-    if gp == 4:
-        gp = 1.25 * xp
+def xp_screen(stats):
+    # Calculate base XP based on monster toughness
+    print(stats[0], stats[1])
+    xp = int(0.25 * stats[0] * stats[1])
+
+    # GP is a randomized portion of the "effort" (XP) spent
+    multipliers = [0.5, 0.75, 1.0, 1.25]
+    gp = int(random.choice(multipliers) * xp)
+    loot = get_random_loot()
+    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!")
+    data.PLAYER["gp"] += gp
+    data.PLAYER["xp"] += xp
+    if loot in data.PLAYER["inventory"]:
+        data.PLAYER["inventory"][loot] += 1
+    else:
+        data.PLAYER["inventory"][loot] = 1
+
 
 
 
