@@ -73,7 +73,7 @@ def move_player():
     if move == "i": return 10, 10
 
     # If they hit a random key
-    print("Hero ponders about life")
+    msg("Hero ponders about life")
     pause()
     return 0, 0
 
@@ -161,30 +161,27 @@ def place_entities(temp_view, monsters):
                 temp_view[my][mx] = m["marker"]
 
 def run_battle(player, enemy):
-    print(f"--- BATTLE: {player['marker']} vs {enemy['name']} ---")
-
+    msg(f"--- BATTLE: {player['marker']} vs {enemy['name']} ---", "battle")
     while player["hp"] > 0 and enemy["hp"] > 0:
         print(f"\nYour HP: {player['hp']} | {enemy['name']} HP: {enemy['hp']}")
         action = input("Do you (A)ttack or (F)lee? ").lower()
-
-
 
         if action == "a":
             # Player attacks
             dmg = random.randint(5, 15)
             enemy["hp"] -= dmg
-            print(f"You hit the {enemy['name']} for {dmg} damage!")
+            msg(f"You hit the {enemy['name']} for {dmg} damage!", "battle")
         elif action == "f":
-            print("You escaped back to the dungeon!")
+            msg("You escaped back to the dungeon!", "battle")
             return "fled"
         else:
-            print("You stumble, paralyzed by indecision!")
+            msg("You stumble, paralyzed by indecision!", "battle")
 
         # Monster attacks back if it's still alive
         if enemy["hp"] > 0:
             m_dmg = enemy["dmg"]
             player["hp"] -= m_dmg
-            print(f"The {enemy['name']} hits you for {m_dmg} damage!")
+            msg(f"The {enemy['name']} hits you for {m_dmg} damage!", "battle")
 
     if player["hp"] <= 0:
         return "lost"
@@ -212,7 +209,7 @@ def draw_battle_screen(enemy):
         print()
 
     # 3. Bottom Left: Hero Stats
-    hero_stats = f"{data.PLAYER['marker']} HP: {data.PLAYER['hp']}"
+    hero_stats = f"HP: {data.PLAYER['hp']}"
     print(hero_stats)
     print("-" * width)
 
@@ -233,7 +230,7 @@ def is_passable(nx, ny, current_level):
     return True
 
 def battle(active_enemy, current_level):
-    print(f"A wild {active_enemy['name']} appeared!")
+    msg(f"A wild {active_enemy['name']} appeared!", "battle")
     pause()
     while True:
         clear_screen()
@@ -241,14 +238,14 @@ def battle(active_enemy, current_level):
         monster_hp = active_enemy["hp"]
         monster_atk = active_enemy["dmg"]
         stats = [monster_hp, monster_atk]
-        print(f"What will you do?")
+        msg(f"What will you do?", "battle")
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
             draw_battle_screen(active_enemy)
-            print(f"The mighty {active_enemy['name']} takes a swipe at you!")
+            msg(f"The mighty {active_enemy['name']} takes a swipe at you!", "battle")
             pause()
             draw_battle_screen(active_enemy)
-            print(f"{active_enemy['name']} does {active_enemy['dmg']} damage!")
+            msg(f"{active_enemy['name']} does {active_enemy['dmg']} damage!", "battle")
             pause()
             data.PLAYER['hp'] -= active_enemy['dmg']
             if data.PLAYER['hp'] <= 0:
@@ -273,16 +270,37 @@ def battle(active_enemy, current_level):
         elif action == "r":
             num = random.randint(1, 3)
             if num == 3:
-                print(f"You managed to get away from the {active_enemy["name"]}")
+                msg(f"You managed to get away from the {active_enemy["name"]}", "battle")
                 pause()
                 if active_enemy in current_level['monsters']:
                     current_level['monsters'].remove(active_enemy)
                 return
             else:
-                print(f"The {active_enemy["name"]} wont let you escape")
+                msg(f"The {active_enemy["name"]} wont let you escape", "battle")
                 pause()
                 atk()
+def sanity_bar():
+    num = data.PLAYER['sanity'] // 10
+    san = ((10 - num) * "-") + (num * "#")
+    return san
 
+def draw_stats():
+    color = "\033[92m"  # Green
+    if data.PLAYER["hp"] <= 25:
+        color = "\033[91m"  # Red
+    elif data.PLAYER["hp"] <= 60:
+        color = "\033[93m"  # Yellow
+    reset = "\033[0m"
+
+    color_san = "\033[92m"  # Green
+    if data.PLAYER["sanity"] <= 40:
+        color_san = "\033[91m"  # Red
+    elif data.PLAYER["sanity"] <= 70:
+        color_san = "\033[93m"  # Yellow
+
+
+    print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']} | Map:{data.PLAYER['current_map']}")
+    print("~" * 40)
 
 def draw_exploration_screen(current_level, fog_map):
     update_visibility(fog_map, current_level)
@@ -303,15 +321,7 @@ def draw_exploration_screen(current_level, fog_map):
     clear_screen()
 
     # Health coloring logic
-    color = "\033[92m"  # Green
-    if data.PLAYER["hp"] <= 25:
-        color = "\033[91m"  # Red
-    elif data.PLAYER["hp"] <= 60:
-        color = "\033[93m"  # Yellow
-    reset = "\033[0m"
-
-    print(f"{color}HP: {data.PLAYER['hp']}{reset} | GP:{data.PLAYER['gp']} | Map:{data.PLAYER['current_map']}")
-    print("~" * 40)
+    draw_stats()
 
     for line in viewport:
         print(line)
@@ -407,6 +417,7 @@ def show_inventory():
 
     while True:
         clear_screen()
+        draw_stats()
         print("=== INVENTORY ===")
 
         # 1. Get the list of names

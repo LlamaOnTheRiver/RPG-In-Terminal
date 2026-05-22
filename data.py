@@ -9,8 +9,8 @@ DUNGEON = {
             (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
         },
         "monsters": [
-            {"name": "rat1", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
-            {"name": "rat2", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
+            {"name": "rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
+            {"name": "rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
 ]
     },
     2: {
@@ -54,6 +54,7 @@ PLAYER = {
         "xp": 0,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
+        "max_sanity": 100,
         "sanity": 100,
         "stats": {
             "Dread": 0,
@@ -71,18 +72,47 @@ PLAYER = {
             "Poop": 3
         }
 }
+
+MONSTERS = {
+    "Rat": {
+        "hp": 15,
+        "dmg": 5,
+        "madness_yield": 2,
+        "loot_weights": {
+            "common": 90,
+            "rare": 10,
+            "epic": 0,
+            "legendary": 0
+        }
+    },
+    "Goblin": {
+        "hp": 20,
+        "dmg": 15,
+        "madness_yield": 2,
+        "loot_weights": {
+            "common": 90,
+            "rare": 10,
+            "epic": 0,
+            "legendary": 0
+        }
+    },
+    "Dragon": {
+        "hp": 500,
+        "dmg": 50,
+        "madness_yield": 50,
+        "loot_weights": {
+            "common": 20,
+            "rare": 50,
+            "legendary": 30
+        }
+    }
+}
 visited_levels = {}
 
 LOOT_DATA = {
     "common": ["Rusty Sword", "Small Health Potion", "Leather Scraps"],
     "rare": ["Steel Longsword", "Large Health Potion", "Iron Shield"],
+    "epic": [],
     "legendary": ["Excalibur", "Dragon Scale Armor"]
 }
 
-# Define the weight (chance) for each rarity
-# In this example, 'common' is 70 times more likely than 'legendary'
-RARITY_WEIGHTS = {
-    "common": 70,
-    "rare": 25,
-    "legendary": 5
-}
