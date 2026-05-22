@@ -72,6 +72,7 @@ def move_player():
     if move == "d": return 1, 0
     if move == "q": return -10, -10
     if move == "i": return 10, 10
+    if move == "f": return 11, 11
 
     # If they hit a random key
     msg("Hero ponders about life")
@@ -497,3 +498,34 @@ def death_check():
     elif data.PLAYER['sanity'] <= 0:
         return "sanity"
     return None
+
+
+def show_stats_screen():
+    p = data.PLAYER
+    while True:
+        clear_screen()
+        print("----- CHARACTER SHEET ------")
+        print(f"Name:    {p['name']}")
+        print(f"Level:   {p['level']} ({p['xp']} XP)")
+        print(f"Health:  {p['hp']}/{p['max_hp']}")
+        print(f"Attack:  {p['atk']}")
+        print(f"Sanity: {sanity_bar()}")
+        print(f"Points:  {p['stat_points']}")  # Points available to spend
+        print("-------------------------")
+
+        if p['stat_points'] > 0:
+            print("You have points to spend! [h] +1 Max HP, [a] +1 Attack, [e] Exit")
+            choice = input("> ").lower()
+
+            if choice == 'h':
+                p['max_hp'] += 5
+                p['hp'] = p['max_hp']  # Heal when upgrading health!
+                p['stat_points'] -= 1
+            elif choice == 'a':
+                p['atk'] += 1
+                p['stat_points'] -= 1
+            elif choice == 'e':
+                return
+        else:
+            input("Press Enter to return to the quest...")
+            return

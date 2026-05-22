@@ -46,12 +46,16 @@ TILE_EFFECTS = {
     }
 
 PLAYER = {
+        "name": "Hero",
         "x": 1,
         "y": 1,
         "current_map": 1,
         "hp": 100,
         "gp": 0,
         "xp": 0,
+        "level": 1,
+        "atk": 10,
+        "stat_points": 5,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
         "max_sanity": 100,

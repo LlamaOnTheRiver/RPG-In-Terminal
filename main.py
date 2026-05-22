@@ -44,6 +44,9 @@ def main():
             if dx == 10 and dy == 10:
                 game_state = "INVENTORY"
                 continue
+            if dx == 11 and dy == 11:
+                game_state = "STATS"
+                continue
 
             # 5. Turn Logic (Only proceed if player moved)
             if dx == 0 and dy == 0:
@@ -81,8 +84,10 @@ def main():
             game_state = "EXPLORE"
         elif game_state == "INVENTORY":
             engine.show_inventory()
-            engine.msg("YAY", "loot")
-            engine.pause()
+            game_state = "EXPLORE"
+
+        elif game_state == "STATS":
+            engine.show_stats_screen()
             game_state = "EXPLORE"
 
 
