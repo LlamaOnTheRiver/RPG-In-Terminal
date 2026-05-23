@@ -12,7 +12,8 @@ def msg(text, style="standard", text1="", text2="", text3=""):
         "combat": ("*", "!"),
         "loot": ("=", "$"),
         "error": ("!", "X"),
-        "death": ("X", "X")
+        "death": ("X", "X"),
+        "skill": ("%", "&")
     }
 
     border_char, side_char = styles.get(style, ("-", "|"))
@@ -471,8 +472,8 @@ def xp_screen(enemy):
     data.PLAYER["xp"] += xp
     xp_msg = ""
     if data.PLAYER["xp"] >= (data.PLAYER["level"] + 1) * 100:
+        data.PLAYER["xp"] -= data.PLAYER["level"] * 100
         data.PLAYER["level"] += 1
-        data.PLAYER["xp"] = 0
         xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
     msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", xp_msg)
     data.PLAYER["gp"] += gp
@@ -504,33 +505,153 @@ def death_check():
         return "sanity"
     return None
 
+def helper_confirm(skill):
+    clear_screen()
+    msg(f"Are you sure you want to train {skill}? (Y/N)","skill")
+    choice = input("> ").lower()
+    if choice == 'y':
+        return True
+    return False
+
+
 
 def show_stats_screen():
     p = data.PLAYER
+    current_page = 1
+    total_pages = 3
+
     while True:
         clear_screen()
-        print("----- CHARACTER SHEET ------")
-        print(f"Name:    {p['name']}")
-        print(f"Level:   {p['level']} ({p['xp']} XP)")
-        print(f"Health:  {p['hp']}/{p['max_hp']}")
-        print(f"Attack:  {p['atk']}")
-        print(f"Sanity: {sanity_bar()}")
-        print(f"Points:  {p['stat_points']}")  # Points available to spend
-        print("-------------------------")
+        # 1. Header showing navigation
+        print(f"--- CHARACTER SHEET (Page {current_page}/{total_pages}) ---")
 
-        if p['stat_points'] > 0:
-            print("You have points to spend! [h] +1 Max HP, [a] +1 Attack, [e] Exit")
-            choice = input("> ").lower()
+        # 2. Page Content
+        if current_page == 1:
+            skills = get_derived_stats()
+            stat_width = 25
+            stats = [
+                ("Name", p['name']),
+                ("Level", p['level']),
+                ("XP", f"{p['xp']}/{p['level'] * 100}"),
+                ("Health",  f"{p['hp']}/{skills[4]}"),
+                ("Attack",  skills[0]),
+                ("Sanity", sanity_bar()),
+            ]
+            for label, value in stats:
+                print(f"{label}:{value: >{stat_width - len(label) - 1}}")
 
-            if choice == 'h':
-                p['max_hp'] += 5
-                p['hp'] = p['max_hp']  # Heal when upgrading health!
-                p['stat_points'] -= 1
-            elif choice == 'a':
-                p['atk'] += 1
-                p['stat_points'] -= 1
-            elif choice == 'e':
-                return
-        else:
-            input("Press Enter to return to the quest...")
-            return
+
+
+
+
+        elif current_page == 3:
+
+            base = 5
+            # 1. Calculate how many points they have earned in total
+            total_earned = 5 * p['level'] + base
+
+            # 2. Calculate how many points they have already assigned
+            # Note the parentheses around the sum!
+            total_spent = (
+                    p['stats']['dread'] +
+                    p['stats']['bastion'] +
+                    p['stats']['instinct'] +
+                    p['stats']['vigor'] +
+                    p['stats']['cunning']
+            )
+
+            # 3. Remaining is the difference
+            p['stat_points'] = total_earned - total_spent
+
+            width = 25  # Total width of the line
+            # Define labels and values
+            skills = [
+                ("Dread", p['stats']['dread']),
+                ("Bastion", p['stats']['bastion']),
+                ("Instinct", p['stats']['instinct']),
+                ("Vigor", p['stats']['vigor']),
+                ("Cunning", p['stats']['cunning']),
+                ("Points", p['stat_points']),
+            ]
+
+            for label, value in skills:
+                # Calculate how much space is left for the number
+                # label_width = width - len(label)
+                # {value: >X} right-aligns the value in a block of X characters
+                print(f"{label}:{value: >{width - len(label) - 1}}")
+
+        elif current_page == 2:
+            skills = get_derived_stats()
+            width = 25
+            stats = [
+            ("Accuracy", f"{skills[1]}%"),
+            ("Crit Chance", f"{skills[2]}%"),
+            ("Regen", skills[3]),
+            ("Armor", skills[5]),
+            ]
+            for label, value in stats:
+                # Calculate how much space is left for the number
+                # label_width = width - len(label)
+                # {value: >X} right-aligns the value in a block of X characters
+                print(f"{label}:{value: >{width - len(label) - 1}}")
+
+
+            #TODO show secondary skills on stat page.
+
+
+        # 3. Footer and Input
+        print("-" * 35)
+        print(f"[a/d] Change Page | [e] Exit")
+        if p['stat_points'] > 0 and current_page == 3:
+            print("\nYou are able to deepen your understanding.")
+            print("Which skill would you like to train?")
+            print("(F)Dread, (B)astion (I)nstint, (V)igor, (C)unning,")
+        choice = input("> ").lower()
+
+        # 4. Navigation Logic
+        if choice == 'd':
+            current_page = current_page + 1 if current_page < total_pages else 1
+        elif choice == 'a':
+            current_page = current_page - 1 if current_page > 1 else total_pages
+        elif choice == 'e':
+            break
+        # 5. Stat Spending Logic (only on page 2)
+        elif choice == 'f' and p['stat_points'] > 0:
+            if helper_confirm("Dread"):
+                p['stats']['dread'] += 1
+        elif choice == 'i' and p['stat_points'] > 0:
+            if helper_confirm("Instinct"):
+                p['stats']['instinct'] += 1
+        elif choice == 'v' and p['stat_points'] > 0:
+            if helper_confirm("Vigor"):
+                p['stats']['vigor'] += 1
+        elif choice == 'c' and p['stat_points'] > 0:
+            if helper_confirm("Cunning"):
+                p['stats']['cunning'] += 1
+        elif choice == 'b' and p['stat_points'] > 0:
+            if helper_confirm("Bastion"):
+                p['stats']['bastion'] += 1
+
+
+def get_derived_stats():
+    # p is your data.PLAYER dictionary
+    p = data.PLAYER
+    stats = p['stats']
+
+    # 1. Dread -> Attack (e.g., 2 DMG per point of Dread)
+    atk = 5 + (stats['dread'] * 2)
+
+    # 2. Instinct -> Accuracy (e.g., base 70% + 2% per point)
+    accuracy = 70 + (stats['instinct'] * 2)
+
+    # 3. Cunning -> Crit Chance (e.g., 1% per point)
+    crit_chance = stats['cunning']
+
+    # 4. Vigor -> Defense/Armor (e.g., 1 Armor per 2 points)
+    regen = stats['vigor'] // 2
+
+    # 5. Vigor -> Health (e.g., 10 HP per point)
+    max_hp = 50 + int((stats['vigor'] * 2.5))
+
+    armor = stats['bastion']//2
+    return [atk, accuracy, crit_chance, regen, max_hp, armor]

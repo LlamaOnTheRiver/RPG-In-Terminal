@@ -50,21 +50,21 @@ PLAYER = {
         "x": 1,
         "y": 1,
         "current_map": 1,
-        "hp": 100,
+        "hp": 50,
         "gp": 0,
         "xp": 0,
         "level": 1,
-        "atk": 10,
-        "stat_points": 5,
+        "stat_points": 0,
         "marker": "\033[94mP\033[0m",
         "max_hp": 200,
         "max_sanity": 100,
         "sanity": 100,
         "stats": {
-            "Dread": 0,
-            "Instinct": 0,
-            "Vigor": 0,
-            "Cunning": 0
+            "dread": 0, #Todo Maybe Like Kreig from borderlands
+            "instinct": 0, #Todo Migi from parasyte natural hardwired reaction
+            "vigor": 0, #Todo Tank like ability with regeneration Zorro from One Piece
+            "cunning": 0, #Todo Sora from no game no life achieving goal through decit or manipulation
+            "bastion": 0
         },
         "inventory": {
             "Health Potion": 2,
