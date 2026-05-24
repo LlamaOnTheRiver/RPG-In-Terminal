@@ -66,6 +66,13 @@ PLAYER = {
             "cunning": 0, #Todo Sora from no game no life achieving goal through decit or manipulation
             "bastion": 0
         },
+        "equipment":{
+            "Helmet": None,
+            "Chestplate": None,
+            "Sword": None,
+            "Leggings": None,
+            "Boots": None,
+        },
         "inventory": {
             "Health Potion": 2,
             "Bread": 1,
@@ -94,7 +101,7 @@ MONSTERS = {
     },
     "Rat": {
         "name": "Rat",
-        "hp": 15,
+        "hp": 1,
         "dmg": 5,
         "madness": 2,
         "intro":["The rat looks hideously deformed.", "It starts oozing yellowish thick liquid from it's pours"],

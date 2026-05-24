@@ -545,12 +545,23 @@ def helper_confirm(skill):
 def show_stats_screen():
     p = data.PLAYER
     current_page = 1
-    total_pages = 3
+    total_pages = 4
 
     while True:
         clear_screen()
+        title = ""
+        if current_page == 1:
+            title = "CHARACTER SHEET"
+        if current_page == 2:
+            title = "SECONDARY SKILLS"
+        if current_page == 3:
+            title = "SKILLS"
+        if current_page == 4:
+            title = "EQUIPMENT"
+
+
         # 1. Header showing navigation
-        print(f"--- CHARACTER SHEET (Page {current_page}/{total_pages}) ---")
+        print(f"--- {title} (Page {current_page}/{total_pages}) ---")
 
         # 2. Page Content
         if current_page == 1:
@@ -622,8 +633,15 @@ def show_stats_screen():
                 # {value: >X} right-aligns the value in a block of X characters
                 print(f"{label}:{value: >{width - len(label) - 1}}")
 
+        elif current_page == 4:
+            width = 25
+            for slot, item in p["equipment"].items():
+                display_item = item if item else "Empty"
+                # Using your alignment logic!
+                print(f"{slot.capitalize()}:{display_item: >{width - len(slot)}}")
 
-            #TODO show secondary skills on stat page.
+
+            #TODO show equipment logic
 
 
         # 3. Footer and Input
@@ -682,3 +700,23 @@ def get_derived_stats():
 
     armor = stats['bastion']//2
     return [atk, accuracy, crit_chance, regen, max_hp, armor]
+
+
+def equip_item(item_name, slot):
+    p = data.PLAYER
+    # 1. Get the current item in that slot
+    old_item = p["equipment"][slot]
+
+    # 2. Put the old item back in inventory if it exists
+    if old_item:
+        p["inventory"][old_item] = p["inventory"].get(old_item, 0) + 1
+
+    # 3. Put the new item in the slot
+    p["equipment"][slot] = item_name
+
+    # 4. Remove one from inventory
+    p["inventory"][item_name] -= 1
+    if p["inventory"][item_name] <= 0:
+        del p["inventory"][item_name]
+
+    print(f"You equipped the {item_name}!")

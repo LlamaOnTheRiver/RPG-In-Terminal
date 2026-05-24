@@ -1,5 +1,6 @@
 import engine
 import data
+from engine import clear_screen, death_check
 
 
 def main():
@@ -20,20 +21,35 @@ def main():
     while True:
         if game_state == "EXPLORE":
             if engine.death_check() == "death":
-                engine.clear_screen()
-                engine.msg("Your time has not yet come.","death", "On your feet warrior.")
-                engine.pause()
-                data.PLAYER['hp'] = data.PLAYER['max_hp']
-                data.PLAYER['gp'] = int(data.PLAYER['gp'] * 0.8)
-                data.PLAYER['current_map'] = 1
-                data.PLAYER['x'] = 1
-                data.PLAYER['y'] = 1
-                data.PLAYER['sanity'] -= 30
-                data.visited_levels = {}
-                continue
-            elif engine.death_check() == "sanity":
-                break
+                # ... existing messages and pauses ...
 
+                # 1. Reset the coordinates and map ID in the data source
+                data.PLAYER["current_map"] = 1
+                data.PLAYER["x"], data.PLAYER["y"] = 1, 1
+                data.PLAYER['hp'] = data.PLAYER['max_hp']
+                data.PLAYER['gp'] = int( data.PLAYER['gp'] * 0.8)
+                data.PLAYER['sanity'] -= 30
+
+                # 2. Wipe the visited memory so the maps reset to their original state
+                data.visited_levels = {}
+
+                # 3. CRITICAL: Use your function to reload the local loop variables!
+                current_level = engine.get_level_data(1)
+                # If you have other variables like monsters or width/height:
+                # monsters = level_info["monsters"]
+                # width = level_info["width"]
+
+                # 4. Reset the fog for the new starting position
+
+                fog_map = [[" " for _ in range(current_level["width"])]
+               for _ in range(current_level["height"])]
+
+                engine.clear_screen()
+                engine.msg("Your time has not yet come warrior,","death","on your feet.")
+                engine.pause()
+                continue
+            elif death_check() == "sanity":
+                break
 
             # 2. Draw the Screen
             engine.draw_exploration_screen(current_level, fog_map)
