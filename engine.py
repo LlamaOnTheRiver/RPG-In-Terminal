@@ -208,6 +208,13 @@ def is_passable(nx, ny, current_level):
 def battle(active_enemy, current_level):
     msg(f"A wild {active_enemy['name']} appeared!", "battle")
     pause()
+    # Update player stats based on current level/points
+    stats = get_derived_stats()
+    # [atk, accuracy, crit_chance, regen, max_hp, armor]
+
+    # Now use the derived values
+
+
     enemy = data.MONSTERS[active_enemy["name"]]
     # Extract all lines after the first one
     # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
@@ -220,6 +227,13 @@ def battle(active_enemy, current_level):
     pause()
     temp_hp = enemy['hp']
     while True:
+        p_hit = random.randint(1, 100) <= stats[1]
+        p_atk = stats[0]
+        p_crit = random.randint(1,100) <= stats[2]
+        data.PLAYER['hp'] += stats[3]
+        if data.PLAYER['hp'] > data.PLAYER['max_hp']:
+            data.PLAYER['hp'] = data.PLAYER['max_hp']
+        p_armor = stats[5]
         clear_screen()
         draw_battle_screen(enemy, temp_hp)
         msg(f"What will you do?", "battle")
@@ -236,7 +250,7 @@ def battle(active_enemy, current_level):
             draw_battle_screen(enemy, temp_hp)
             msg(f"{enemy['name']} does {enemy['dmg']} damage!", "battle")
             pause()
-            data.PLAYER['hp'] -= enemy['dmg']
+            data.PLAYER['hp'] -= enemy['dmg'] - p_armor
             if data.PLAYER['hp'] <= 0:
                 data.PLAYER['hp'] = 0
                 return True
@@ -245,17 +259,30 @@ def battle(active_enemy, current_level):
 
         if action == "a":
             # Handle combat...
-            temp_hp -= 10
-            if temp_hp <= 0:
-                temp_hp = 0
-                draw_battle_screen(enemy, temp_hp)
-                xp_screen(enemy)
-                pause()
-                # Remove the monster from the live list
-                current_level['monsters'].remove(active_enemy)
-                return
-
+            if p_hit:
+                if p_crit:
+                    clear_screen()
+                    draw_battle_screen(enemy, temp_hp)
+                    msg(f"{data.PLAYER['name']} landed a crit and did {p_atk * 2} damage!", "battle")
+                    pause()
+                    temp_hp -= p_atk
+                temp_hp -= p_atk
+                if temp_hp <= 0:
+                    temp_hp = 0
+                    draw_battle_screen(enemy, temp_hp)
+                    xp_screen(enemy)
+                    pause()
+                    # Remove the monster from the live list
+                    current_level['monsters'].remove(active_enemy)
+                    return
+                else:
+                    if atk():
+                        return
             else:
+                clear_screen()
+                draw_battle_screen(enemy, temp_hp)
+                msg(f"{data.PLAYER['name']} missed their attack!")
+                pause()
                 if atk():
                     return
         elif action == "r":
@@ -279,9 +306,9 @@ def sanity_bar():
 
 def draw_stats():
     color = "\033[92m"  # Green
-    if data.PLAYER["hp"] <= 25:
+    if data.PLAYER["hp"] <= 0.25 * data.PLAYER["max_hp"]:
         color = "\033[91m"  # Red
-    elif data.PLAYER["hp"] <= 60:
+    elif data.PLAYER["hp"] <= 0.6 * data.PLAYER["max_hp"] :
         color = "\033[93m"  # Yellow
     reset = "\033[0m"
 
@@ -642,13 +669,13 @@ def get_derived_stats():
     atk = 5 + (stats['dread'] * 2)
 
     # 2. Instinct -> Accuracy (e.g., base 70% + 2% per point)
-    accuracy = 70 + (stats['instinct'] * 2)
+    accuracy = 75 + (stats['instinct'] * 2)
 
     # 3. Cunning -> Crit Chance (e.g., 1% per point)
     crit_chance = stats['cunning']
 
     # 4. Vigor -> Defense/Armor (e.g., 1 Armor per 2 points)
-    regen = stats['vigor'] // 2
+    regen = stats['vigor'] // 5
 
     # 5. Vigor -> Health (e.g., 10 HP per point)
     max_hp = 50 + int((stats['vigor'] * 2.5))

@@ -56,7 +56,7 @@ PLAYER = {
         "level": 1,
         "stat_points": 0,
         "marker": "\033[94mP\033[0m",
-        "max_hp": 200,
+        "max_hp": 50,
         "max_sanity": 100,
         "sanity": 100,
         "stats": {
@@ -78,10 +78,24 @@ PLAYER = {
 }
 
 MONSTERS = {
+    "Ghoul": {
+            "name": "Ghoul",
+            "hp": 20,
+            "dmg": 15,
+            "madness": 4,
+            "intro":["The Ghouls wispy form appears before you, wretched and torn."],
+            "cry":["The Ghoul swipes through you with it's clawlike hand. Hitting your soul."],
+            "loot_weights": {
+                "common": 90,
+                "rare": 10,
+                "epic": 0,
+                "legendary": 0
+            },
+    },
     "Rat": {
         "name": "Rat",
         "hp": 15,
-        "dmg": 75,
+        "dmg": 5,
         "madness": 2,
         "intro":["The rat looks hideously deformed.", "It starts oozing yellowish thick liquid from it's pours"],
         "cry":["The oily rat lunges at you", "and starts gnawing on your flesh."],
@@ -93,15 +107,19 @@ MONSTERS = {
         }
     },
     "Goblin": {
+        "name": "Goblin",
         "hp": 20,
         "dmg": 15,
-        "madness_yield": 2,
+        "madness": 3,
+        "intro":["The Goblin takes it jagged club and licks the blood off it before attacking you."],
+        "cry":["The crooked Goblin raises it's club and strikes!"],
         "loot_weights": {
             "common": 90,
             "rare": 10,
             "epic": 0,
             "legendary": 0
         }
+
     },
     "Dragon": {
         "hp": 500,
