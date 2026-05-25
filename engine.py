@@ -434,60 +434,75 @@ def use_item(item_name):
 def show_inventory():
     page = 0
     items_per_page = 6
+    categories = ["all", "food", "equipment", "quest"]
+    cat_idx = 0
 
     while True:
         clear_screen()
         draw_stats()
-        print("=== INVENTORY ===")
+        current_cat = categories[cat_idx]
+        print(f"=== INVENTORY: {current_cat.upper()} ===")
 
-        # 1. Get the list of names
-        item_names = list(sorted(data.PLAYER["inventory"].keys()))
-        total_items = len(item_names)
+        # --- FILTERING LOGIC ---
+        all_item_names = list(sorted(data.PLAYER["inventory"].keys()))
+
+        if current_cat == "all":
+            filtered_names = all_item_names
+        else:
+            # Only keep items that match the current category type
+            filtered_names = [
+                name for name in all_item_names
+                if data.ITEMS.get(name, {}).get("type") == current_cat
+            ]
+
+        total_items = len(filtered_names)
+        # -----------------------
 
         if total_items == 0:
-            msg("Your pack is empty.")
-            # Print 5 empty lines because we used 1 for the empty message
-            for _ in range(items_per_page - 1):
-                print()
+            print(f"\n   (No {current_cat} items)   \n")
+            for _ in range(items_per_page - 2): print()
         else:
             start_idx = page * items_per_page
             end_idx = start_idx + items_per_page
-            page_items = item_names[start_idx:end_idx]
+            page_items = filtered_names[start_idx:end_idx]
 
-            # 1. Print the items we actually have
             for i, name in enumerate(page_items, start_idx + 1):
                 count = data.PLAYER["inventory"][name]
                 print(f"{i}. {name[:20]:<20} x{count}")
 
-            # 2. PADDING: Print blank lines for the remaining "slots"
-            # If we only printed 2 items, this prints 4 empty lines
             for _ in range(items_per_page - len(page_items)):
                 print()
 
             total_pages = (total_items - 1) // items_per_page + 1
             print(f"\n--- Page {page + 1} of {total_pages} ---")
 
-        print("=" * 18)
-        print("(A) Prev | (D) Next | (B)ack")
+        print("=" * 25)
+        print("(A/D) Pages | (W/S) Category | (Q)uit")
 
         choice = input("> ").lower()
 
-        if choice == 'b':
+        # Category Switching
+        if choice == 'w':
+            cat_idx = (cat_idx - 1) % len(categories)
+            page = 0  # Reset page when switching categories
+        elif choice == 's':
+            cat_idx = (cat_idx + 1) % len(categories)
+            page = 0
+        # Navigation
+        elif choice == 'q':
             break
         elif choice == 'a' and page > 0:
             page -= 1
         elif choice == 'd' and (page + 1) * items_per_page < total_items:
             page += 1
+        # Use Item Logic
         elif choice.isdigit():
             selection = int(choice)
             if 1 <= selection <= total_items:
-                chosen_item = item_names[selection - 1]
+                chosen_item = filtered_names[selection - 1]
                 use_item(chosen_item)
-                # If the item was used up and removed, we might need to adjust the page
-                # Refresh names to check if we still have items
-                item_names = list(data.PLAYER["inventory"].keys())
-                if len(item_names) <= page * items_per_page and page > 0:
-                    page -= 1
+
+
 def xp_screen(enemy):
     # Calculate base XP based on monster toughness
     xp = int(0.25 * enemy['dmg'] * enemy['hp'])
@@ -646,11 +661,19 @@ def show_stats_screen():
 
         # 3. Footer and Input
         print("-" * 35)
-        print(f"[a/d] Change Page | [e] Exit")
+        nav_bar = f"[A/D] Change Page | [Q] Quit "
+        if current_page == 4:
+            print("E Equip Item | ",nav_bar)
+        else:
+            print(nav_bar)
+
         if p['stat_points'] > 0 and current_page == 3:
+            level_up = True
             print("\nYou are able to deepen your understanding.")
             print("Which skill would you like to train?")
             print("(F)Dread, (B)astion (I)nstint, (V)igor, (C)unning,")
+        else:
+            level_up = False
         choice = input("> ").lower()
 
         # 4. Navigation Logic
@@ -658,24 +681,29 @@ def show_stats_screen():
             current_page = current_page + 1 if current_page < total_pages else 1
         elif choice == 'a':
             current_page = current_page - 1 if current_page > 1 else total_pages
-        elif choice == 'e':
+        elif choice == 'q':
             break
         # 5. Stat Spending Logic (only on page 2)
-        elif choice == 'f' and p['stat_points'] > 0:
-            if helper_confirm("Dread"):
-                p['stats']['dread'] += 1
-        elif choice == 'i' and p['stat_points'] > 0:
-            if helper_confirm("Instinct"):
-                p['stats']['instinct'] += 1
-        elif choice == 'v' and p['stat_points'] > 0:
-            if helper_confirm("Vigor"):
-                p['stats']['vigor'] += 1
-        elif choice == 'c' and p['stat_points'] > 0:
-            if helper_confirm("Cunning"):
-                p['stats']['cunning'] += 1
-        elif choice == 'b' and p['stat_points'] > 0:
-            if helper_confirm("Bastion"):
-                p['stats']['bastion'] += 1
+        if level_up:
+            if choice == 'f' and p['stat_points'] > 0:
+                if helper_confirm("Dread"):
+                    p['stats']['dread'] += 1
+            elif choice == 'i' and p['stat_points'] > 0:
+                if helper_confirm("Instinct"):
+                    p['stats']['instinct'] += 1
+            elif choice == 'v' and p['stat_points'] > 0:
+                if helper_confirm("Vigor"):
+                    p['stats']['vigor'] += 1
+            elif choice == 'c' and p['stat_points'] > 0:
+                if helper_confirm("Cunning"):
+                    p['stats']['cunning'] += 1
+            elif choice == 'b' and p['stat_points'] > 0:
+                if helper_confirm("Bastion"):
+                    p['stats']['bastion'] += 1
+        if current_page == 4:
+            if choice == 'e':
+                show_equipment_picker()
+
 
 
 def get_derived_stats():
@@ -702,21 +730,101 @@ def get_derived_stats():
     return [atk, accuracy, crit_chance, regen, max_hp, armor]
 
 
-def equip_item(item_name, slot):
+def equip_item(item_name):
     p = data.PLAYER
-    # 1. Get the current item in that slot
-    old_item = p["equipment"][slot]
+    item_info = data.ITEMS.get(item_name)
 
-    # 2. Put the old item back in inventory if it exists
+    if not item_info or "slot" not in item_info:
+        msg("This item cannot be equipped!", "error")
+        return
+
+    slot = item_info["slot"]
+
+    # 1. Take the current item off (if there is one) and put it in inventory
+    old_item = p["equipment"].get(slot)
     if old_item:
         p["inventory"][old_item] = p["inventory"].get(old_item, 0) + 1
+        print(f"Unequipped {old_item}.")
 
-    # 3. Put the new item in the slot
+    # 2. Put the new item on
     p["equipment"][slot] = item_name
 
-    # 4. Remove one from inventory
+    # 3. Remove the new item from inventory
     p["inventory"][item_name] -= 1
     if p["inventory"][item_name] <= 0:
         del p["inventory"][item_name]
 
-    print(f"You equipped the {item_name}!")
+    print(f"Successfully equipped {item_name} to {slot}!")
+
+
+def show_equipment_picker():
+    page = 0
+    items_per_page = 6
+    p = data.PLAYER
+
+    while True:
+        clear_screen()
+        # --- THE FILTER ---
+        # Look through inventory, but only keep items that have a 'slot' defined
+        all_items = sorted(p["inventory"].keys())
+        equippable_names = [
+            name for name in all_items
+            if "slot" in data.ITEMS.get(name, {})
+        ]
+
+        total_items = len(equippable_names)
+        # ------------------
+
+        print("--- SELECT EQUIPMENT ---")
+        width = 25
+        for slot in p["equipment"]:
+            # 1. Get the name of the item (e.g., "Iron Helmet") or "Empty" if None
+            item_name = p["equipment"][slot]
+            if item_name is None:
+                item_name = "Empty"
+
+            # 2. Use alignment to push the item name to the right
+            # slot.capitalize() makes "helmet" look like "Helmet"
+            # The > operator right-aligns the item_name
+            print(f"{slot.capitalize()}:{item_name: >{width - len(slot) - 1}}")
+        if total_items == 0:
+            print("\n  No equippable items found. \n")
+            # Fill space for UI consistency
+            for _ in range(items_per_page): print()
+        else:
+            start_idx = page * items_per_page
+            end_idx = start_idx + items_per_page
+            page_items = equippable_names[start_idx:end_idx]
+
+            print("=" * 40)
+            print(f"--- INVENTORY ---")
+
+            for i, name in enumerate(page_items, start_idx + 1):
+                item_data = data.ITEMS[name]
+                slot_type = item_data["slot"]
+                count = p["inventory"][name]
+                # Display name and what slot it fits into
+                print(f"{i}. {name[:15]:<15} [{slot_type}] x{count}")
+
+            # Padding
+            for _ in range(items_per_page - len(page_items)):
+                print()
+
+            total_pages = (total_items - 1) // items_per_page + 1
+            print(f"\n--- Page {page + 1} of {total_pages} ---")
+
+        print("(A/D) Pages | (Number) to Equip | (Q)uit")
+        choice = input("> ").lower()
+
+        if choice == 'q':
+            break
+        elif choice == 'a' and page > 0:
+            page -= 1
+        elif choice == 'd' and (page + 1) * items_per_page < total_items:
+            page += 1
+        elif choice.isdigit():
+            selection = int(choice)
+            if 1 <= selection <= total_items:
+                chosen_item = equippable_names[selection - 1]
+                # Use the equip function we discussed earlier!
+                equip_item(chosen_item)

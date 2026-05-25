@@ -80,7 +80,9 @@ PLAYER = {
             "Sword": 3,
             "Water": 4,
             "Gold": 5,
-            "Poop": 3
+            "Poop": 3,
+            "Iron Helmet": 1,
+            "Steel Helmet": 2,
         }
 }
 
@@ -147,4 +149,37 @@ LOOT_DATA = {
     "epic": [],
     "legendary": ["Excalibur", "Dragon Scale Armor"]
 }
+ITEMS = { #Todo use equipment in the equip screen
 
+    #///EQUIPMENT///
+    "Iron Helmet": {
+        "type": "equipment",
+        "slot": "Helmet",
+        "stats": {"accuracy": 5, "vigor": 2},
+    },
+    "Iron Leggings": {
+            "type": "equipment",
+            "slot": "Leggings",
+            "stats": {"accuracy": 5, "vigor": 2},
+        },
+    "Iron Boots": {
+            "type": "equipment",
+            "slot": "Boots",
+            "stats": {"accuracy": 5, "vigor": 2},
+        },
+    "Iron Chestplate": {
+            "type": "equipment",
+            "slot": "Chestplate",
+            "stats": {"accuracy": 5, "vigor": 2},
+        },
+    "Iron Sword": {
+            "type": "equipment",
+            "slot": "Sword",
+            "stats": {"accuracy": 5, "vigor": 2},
+        },
+    "Steel Helmet": {
+            "type": "equipment",
+            "slot": "Helmet",
+            "stats": {"accuracy": 5, "vigor": 2},
+        },
+}
