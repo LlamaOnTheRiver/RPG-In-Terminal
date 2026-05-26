@@ -613,17 +613,25 @@ def show_stats_screen():
                     p['stats']['cunning']
             )
 
-            # 3. Remaining is the difference
+
+            dread = get_current_stat("dread")
+            bastion = get_current_stat("bastion")
+            instinct = get_current_stat("instinct")
+            vigor = get_current_stat("vigor")
+            cunning = get_current_stat("cunning")
+
+
+
             p['stat_points'] = total_earned - total_spent
 
             width = 25  # Total width of the line
             # Define labels and values
             skills = [
-                ("Dread", p['stats']['dread']),
-                ("Bastion", p['stats']['bastion']),
-                ("Instinct", p['stats']['instinct']),
-                ("Vigor", p['stats']['vigor']),
-                ("Cunning", p['stats']['cunning']),
+                ("Dread", dread),
+                ("Bastion", bastion),
+                ("Instinct", instinct),
+                ("Vigor", vigor),
+                ("Cunning", cunning),
                 ("Points", p['stat_points']),
             ]
 
@@ -656,7 +664,7 @@ def show_stats_screen():
                 print(f"{slot.capitalize()}:{display_item: >{width - len(slot)}}")
 
 
-            #TODO show equipment logic
+            #TODO make equipment stats matter
 
 
         # 3. Footer and Input
@@ -709,24 +717,37 @@ def show_stats_screen():
 def get_derived_stats():
     # p is your data.PLAYER dictionary
     p = data.PLAYER
-    stats = p['stats']
+    # ///MAIN STATS///
+    dread = get_current_stat("dread")
+    bastion = get_current_stat("bastion")
+    instinct = get_current_stat("instinct")
+    vigor = get_current_stat("vigor")
+    cunning = get_current_stat("cunning")
+    # ///DERIVED STATS///
+    atk_bonus = get_current_stat("atk")
+    accuracy_bonus = get_current_stat("accuracy")
+    crit_chance_bonus = get_current_stat("crit_chance")
+    regen_bonus = get_current_stat("regen")
+    max_hp_bonus = get_current_stat("max_hp")
+    armor_bonus = get_current_stat("armor")
+
 
     # 1. Dread -> Attack (e.g., 2 DMG per point of Dread)
-    atk = 5 + (stats['dread'] * 2)
+    atk = 5 + (dread * 2) + atk_bonus
 
     # 2. Instinct -> Accuracy (e.g., base 70% + 2% per point)
-    accuracy = 75 + (stats['instinct'] * 2)
+    accuracy = 75 + (instinct * 2) + accuracy_bonus
 
     # 3. Cunning -> Crit Chance (e.g., 1% per point)
-    crit_chance = stats['cunning']
+    crit_chance = cunning + crit_chance_bonus
 
     # 4. Vigor -> Defense/Armor (e.g., 1 Armor per 2 points)
-    regen = stats['vigor'] // 5
+    regen = vigor // 5 + regen_bonus
 
     # 5. Vigor -> Health (e.g., 10 HP per point)
-    max_hp = 50 + int((stats['vigor'] * 2.5))
+    max_hp = 50 + int((vigor * 2.5)) + max_hp_bonus
 
-    armor = stats['bastion']//2
+    armor = bastion//2 + armor_bonus
     return [atk, accuracy, crit_chance, regen, max_hp, armor]
 
 
@@ -828,3 +849,21 @@ def show_equipment_picker():
                 chosen_item = equippable_names[selection - 1]
                 # Use the equip function we discussed earlier!
                 equip_item(chosen_item)
+
+
+def get_current_stat(stat_name):
+    p = data.PLAYER
+    # 1. Start with the raw base value from the player
+    # Check primary stats first, then default to 0 for combat stats
+    base_value = p['stats'].get(stat_name, 0)
+
+    # 2. Add bonuses from every equipped slot
+    bonus = 0
+    for slot in p['equipment']:
+        item_name = p['equipment'][slot]
+        if item_name in data.ITEMS:
+            # Add the bonus if the item has this specific stat
+            item_bonuses = data.ITEMS[item_name].get("stats", {})
+            bonus += item_bonuses.get(stat_name, 0)
+
+    return base_value + bonus

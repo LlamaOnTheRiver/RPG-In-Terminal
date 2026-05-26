@@ -103,7 +103,7 @@ MONSTERS = {
     },
     "Rat": {
         "name": "Rat",
-        "hp": 1,
+        "hp": 15,
         "dmg": 5,
         "madness": 2,
         "intro":["The rat looks hideously deformed.", "It starts oozing yellowish thick liquid from it's pours"],
@@ -155,7 +155,7 @@ ITEMS = { #Todo use equipment in the equip screen
     "Iron Helmet": {
         "type": "equipment",
         "slot": "Helmet",
-        "stats": {"accuracy": 5, "vigor": 2},
+        "stats": {"accuracy": 5, "crit_chance": 4, "regen": 3, "max_hp": 2, "armor": 7, "dread": 404, "vigor": 2},
     },
     "Iron Leggings": {
             "type": "equipment",
