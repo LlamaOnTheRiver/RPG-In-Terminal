@@ -45,7 +45,7 @@ def main():
                for _ in range(current_level["height"])]
 
                 engine.clear_screen()
-                engine.msg("Your time has not yet come warrior,","death","on your feet.")
+                engine.msg("Your time has not yet come warrior,","on your feet.", style='death')
                 engine.pause()
                 continue
             elif death_check() == "sanity":

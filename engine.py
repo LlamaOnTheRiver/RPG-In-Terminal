@@ -5,8 +5,10 @@ import copy
 import items
 
 
-def msg(text, style="standard", text1="", text2="", text3=""):
-    # Define different border characters for different event types
+# engine.py
+
+def msg(*lines, style="standard", pause_msg=True):
+    # ... (your styles logic) ...
     styles = {
         "standard": ("-", "|"),
         "combat": ("*", "!"),
@@ -16,8 +18,37 @@ def msg(text, style="standard", text1="", text2="", text3=""):
         "skill": ("%", "&"),
         "shop": ("%", "$")
     }
-
     border_char, side_char = styles.get(style, ("-", "|"))
+
+
+    for i in range(0, len(lines), 3):
+        chunk = lines[i: i + 3]
+
+        # 1. THE REDRAW STEP
+        # If we have the data, we can draw the world before the text
+
+        # 2. DRAW THE DIALOGUE BOX
+        width = max(len(str(line)) for line in chunk)
+        print(border_char * (width + 4))
+        for line in chunk:
+            print(f"{side_char} {str(line).ljust(width)} {side_char}")
+        print(border_char * (width + 4))
+
+        # 3. PAUSE
+        if i + 3 < len(lines):
+            if pause_msg:
+                pause()
+                clear_screen()
+        else:
+            if pause_msg:
+                pause()
+
+'''
+def msg(text, style="standard", text1="", text2="", text3=""):
+    # Define different border characters for different event types
+    
+
+    
 
     # Calculate the width based on the text length
     width = max(len(text), len(text1), len(text2), len(text3))
@@ -30,7 +61,7 @@ def msg(text, style="standard", text1="", text2="", text3=""):
     if text2: print(f"{side_char} {text2.ljust(width)} {side_char}")
     if text3: print(f"{side_char} {text3.ljust(width)} {side_char}")
     print(border_char * (width + 4))
-
+'''
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     # 1. Use the level_id we were handed!
     if level_id not in data.visited_levels:
@@ -77,8 +108,7 @@ def move_player():
     if move == "f": return 11, 11
 
     # If they hit a random key
-    msg("Hero ponders about life")
-    pause()
+    msg("Hero ponders about life", "But does he really Ponder?", "Maybe he just sits there for long periods of time", "Or maybe standing is a thing?", "Should we go sitting?", "Yes sitting will do",style="shop",)
     return 0, 0
 
 
@@ -89,7 +119,7 @@ def clear_screen():
         os.system('clear')
 
 def pause():
-    input("\nPress Enter to continue...")
+    input(">...")
 
 def update_visibility(fog_map, current_level, radius=2):
     w = current_level['width']
@@ -207,8 +237,7 @@ def is_passable(nx, ny, current_level):
     return True
 
 def battle(active_enemy, current_level):
-    msg(f"A wild {active_enemy['name']} appeared!", "battle")
-    pause()
+    msg(f"A wild {active_enemy['name']} appeared!", style="battle")
     # Update player stats based on current level/points
     stats = get_derived_stats()
     # [atk, accuracy, crit_chance, regen, max_hp, armor]
@@ -224,8 +253,7 @@ def battle(active_enemy, current_level):
     clear_screen()
 
     # Unpack the list into the optional parameters
-    msg(enemy["intro"][0], "battle", *extra_lines)
-    pause()
+    msg(enemy["intro"][0], *extra_lines, style="battle")
     temp_hp = enemy['hp']
     while True:
         p_hit = random.randint(1, 100) <= stats[1]
@@ -237,7 +265,7 @@ def battle(active_enemy, current_level):
         p_armor = stats[5]
         clear_screen()
         draw_battle_screen(enemy, temp_hp)
-        msg(f"What will you do?", "battle")
+        msg(f"What will you do?", style="battle", pause_msg=False)
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
             draw_battle_screen(enemy, temp_hp)
@@ -246,11 +274,9 @@ def battle(active_enemy, current_level):
             cry_lines = enemy["cry"][1:4]
 
             # Unpack the list into the optional parameters
-            msg(enemy["cry"][0], "battle", *cry_lines)
-            pause()
+            msg(enemy["cry"][0], *cry_lines, style="battle")
             draw_battle_screen(enemy, temp_hp)
-            msg(f"{enemy['name']} does {enemy['dmg']} damage!", "battle")
-            pause()
+            msg(f"{enemy['name']} does {enemy['dmg']} damage!", style="battle")
             data.PLAYER['hp'] -= enemy['dmg'] - p_armor
             if data.PLAYER['hp'] <= 0:
                 data.PLAYER['hp'] = 0
@@ -264,8 +290,7 @@ def battle(active_enemy, current_level):
                 if p_crit:
                     clear_screen()
                     draw_battle_screen(enemy, temp_hp)
-                    msg(f"{data.PLAYER['name']} landed a crit and did {p_atk * 2} damage!", "battle")
-                    pause()
+                    msg(f"{data.PLAYER['name']} landed a crit and did {p_atk * 2} damage!", style="battle")
                     temp_hp -= p_atk
                 temp_hp -= p_atk
                 if temp_hp <= 0:
@@ -282,21 +307,18 @@ def battle(active_enemy, current_level):
             else:
                 clear_screen()
                 draw_battle_screen(enemy, temp_hp)
-                msg(f"{data.PLAYER['name']} missed their attack!")
-                pause()
+                msg(f"{data.PLAYER['name']} missed their attack!", style="battle")
                 if atk():
                     return
         elif action == "r":
             num = random.randint(1, 3)
             if num == 3:
-                msg(f"You managed to get away from the {enemy["name"]}", "battle")
-                pause()
+                msg(f"You managed to get away from the {enemy["name"]}", style="battle")
                 if active_enemy in current_level['monsters']:
                     current_level['monsters'].remove(active_enemy)
                 return
             else:
-                msg(f"The {enemy["name"]} wont let you escape", "battle")
-                pause()
+                msg(f"The {enemy["name"]} wont let you escape", style="battle")
                 if atk():
                     return
 
@@ -365,7 +387,6 @@ def check_tile_event(player, new_pos, current_level):
     # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
     if not (0 <= nx < width and 0 <= ny < height):
         msg("The edge of the world blocks you!")
-        pause()
         return player, next_state
 
     player["x"] = nx
@@ -376,7 +397,6 @@ def check_tile_event(player, new_pos, current_level):
 
         if effect.get("block"):
             msg(effect["msg"])
-            pause()
             return player, "EXPLORE"  # Stay in explore if blocked
 
 
@@ -386,57 +406,10 @@ def check_tile_event(player, new_pos, current_level):
 
         # Trigger the State Change if the tile is a Shop
         if effect.get("shop"):
-            print("DEBUG: Shop tile detected!")
-            pause()
             next_state = "SHOP"
 
         if "consume" in effect:
             current_map[ny][nx] = effect["consume"]
-
-    return player, next_state
-
-'''
-def check_tile_event(player, new_pos, current_level):
-    nx, ny = new_pos
-
-    # 1. Use the data from current_level
-    current_map = current_level["map"]
-    width = current_level["width"]
-    height = current_level["height"]
-
-    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
-    if not (0 <= nx < width and 0 <= ny < height):
-        msg("The edge of the world blocks you!")
-        pause()
-        return player
-
-        # 3. Get the tile now that we know we are in bounds
-    tile = current_map[ny][nx]
-    if not (0 <= nx < width and 0 <= ny < height):
-        msg("The edge of the world blocks you!")
-        pause()
-        return player  # Return player unchanged
-
-    if tile in data.TILE_EFFECTS:
-        effect = data.TILE_EFFECTS[tile]
-
-        # 1. Handle Blocking immediately
-        if effect.get("block"):
-            msg(effect["msg"])
-            pause()
-            return player
-        player["hp"] += effect.get("hp", 0)
-        player["gp"] += effect.get("gp", 0)
-
-        # Clamp HP
-        player["hp"] = min(player["max_hp"], player["hp"])
-
-        # 4. Handle Consuming
-        if "consume" in effect:
-            current_map[ny][nx] = effect["consume"]
-            
-        if "SHOP" in effect:
-            return "SHOP"
 
         if "teleport" in effect:
             cords = (ny, nx)
@@ -449,18 +422,9 @@ def check_tile_event(player, new_pos, current_level):
             data.PLAYER["y"] = stair_data["target_y"]
             if "msg" in effect:
                 msg(effect["msg"])
-                pause()
-            return data.PLAYER
+            return data.PLAYER, next_state
 
-        # Update position and return
-
-        if "msg" in effect:
-            msg(effect["msg"])
-            pause()
-    player["x"], player["y"] = nx, ny
-    return player
-'''
-
+    return player, next_state
 
 def use_item(item_name):
     # Check the registry in the items file
@@ -475,9 +439,9 @@ def use_item(item_name):
         if data.PLAYER["inventory"][item_name] <= 0:
             del data.PLAYER["inventory"][item_name]
     else:
-        msg(f"The {item_name} is a curious object, but you can't use it now.")
+        msg(f"The {item_name} is a curious object, but you can't use it now.", style="error")
 
-    pause()
+
 
 
 def show_inventory():
@@ -566,7 +530,7 @@ def xp_screen(enemy):
         data.PLAYER["xp"] -= data.PLAYER["level"] * 100
         data.PLAYER["level"] += 1
         xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
-    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", xp_msg)
+    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", xp_msg, style="loot")
     data.PLAYER["gp"] += gp
     data.PLAYER["sanity"] -= enemy["madness"]
     if loot in data.PLAYER["inventory"]:
@@ -598,7 +562,7 @@ def death_check():
 
 def helper_confirm(skill):
     clear_screen()
-    msg(f"Are you sure you want to train {skill}? (Y/N)","skill")
+    msg(f"Are you sure you want to train {skill}? (Y/N)",style="skill")
     choice = input("> ").lower()
     if choice == 'y':
         return True
@@ -715,7 +679,7 @@ def show_stats_screen():
 
             #TODO make a skilltree
             #TODO make a crafting system
-            #TODO make a shop
+
 
 
         # 3. Footer and Input
@@ -807,7 +771,7 @@ def equip_item(item_name):
     item_info = data.ITEMS.get(item_name)
 
     if not item_info or "slot" not in item_info:
-        msg("This item cannot be equipped!", "error")
+        msg("This item cannot be equipped!", style="error")
         return
 
     slot = item_info["slot"]
@@ -1022,19 +986,16 @@ def show_shop_screen(floor_id):
                         data.PLAYER["gp"] -= price
                         # Add to player inventory
                         data.PLAYER["inventory"][chosen_name] = data.PLAYER["inventory"].get(chosen_name, 0) + 1
-                        msg(f"Bought {chosen_name}!", "shop")
-                        pause()
+                        msg(f"Bought {chosen_name}!", style="shop")
                     else:
-                        msg("Not enough gold!", "shop")
-                        pause()
+                        msg("Not enough gold!", style="shop")
 
                 elif mode == "sell":
                     item_data = data.ITEMS.get(chosen_name, {})
                     base_price = item_data.get("value", 0)
                     sell_price = base_price // 2
                     if base_price <= 0:
-                        msg("The merchant shakes their head. 'I have no use for this junk.'", "shop")
-                        pause()
+                        msg("The merchant shakes their head. 'I have no use for this junk.'", style="shop")
                         continue  # Skip the rest of the transaction and restart the loop
                     # 2. Add gold to player
                     data.PLAYER["gp"] += sell_price
@@ -1054,4 +1015,4 @@ def show_shop_screen(floor_id):
                         # If the merchant didn't sell this before, they do now!
                         shop_stock[chosen_name] = 1
 
-                    msg(f"Sold {chosen_name} for {sell_price} GP. The merchant adds it to their shelf.", "shop")
+                    msg(f"Sold {chosen_name} for {sell_price} GP. The merchant adds it to their shelf.", style="shop")
