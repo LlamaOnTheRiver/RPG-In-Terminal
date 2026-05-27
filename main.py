@@ -73,7 +73,9 @@ def main():
             # Check if move is possible
             if engine.is_passable(new_pos[0], new_pos[1], current_level):
                 # Move Player & Process Tile (like stairs)
-                data.PLAYER = engine.check_tile_event(data.PLAYER, new_pos, current_level)
+                data.PLAYER, game_state = engine.check_tile_event(data.PLAYER, new_pos, current_level)
+                if game_state != "EXPLORE":
+                    continue
 
                 # Check if stairs changed the map ID
                 if data.PLAYER["current_map"] != last_map_id:
@@ -104,6 +106,10 @@ def main():
 
         elif game_state == "STATS":
             engine.show_stats_screen()
+            game_state = "EXPLORE"
+
+        elif game_state == "SHOP":
+            engine.show_shop_screen(data.PLAYER['current_map'])
             game_state = "EXPLORE"
 
 

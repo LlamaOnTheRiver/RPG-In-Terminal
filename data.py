@@ -1,50 +1,3 @@
-DUNGEON = {
-    1: {
-        "map": [
-            [".", ".", ".",".", ".", ".","W", "G", "G"],
-            [".", ".", ".","W", ".", "W","W", "G", "G"],
-            [".", ".", ".","W", ".", ".",".", ".", "S"]
-        ],
-        "stairs":{
-            (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
-        },
-        "monsters": [
-            {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
-            {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
-]
-    },
-    2: {
-        "map": [
-            [".",".",".","G","G",".",".",".","G","G",],
-            [".",".",".","G","G",".",".","H","G","G",],
-            [".","H",".","G","G",".",".",".","G","G",],
-            [".",".",".","G",".","H",".",".","G","G",],
-            [".","T","T","G","S","W","W","W","G","G",],
-            [".","T","T","G","G",".",".","W","G","G",],
-            [".",".",".","G","G",".",".","W","G","G",],
-            [".",".",".","G","G","H","H",".","G","G",],
-            [".",".",".","G","G",".",".",".","G","G",],
-            [".",".",".","G","G",".",".",".","G","G",],
-        ],
-        "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
-                  },
-        "monsters": [
-            {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 10},
-            {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5},
-            {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5}
-        ]
-    }
-}
-
-
-TILE_EFFECTS = {
-        "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
-        "G": {"msg": "GOLD! +5 GP", "gp": 5, "consume": "."},
-        "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
-        "W": {"msg": "A solid wall.", "block": True},
-        "S": {"msg": "You begin to travel to another floor.", "teleport": True},
-    }
-
 PLAYER = {
         "name": "Hero",
         "x": 1,
@@ -85,6 +38,61 @@ PLAYER = {
             "Steel Helmet": 2,
         }
 }
+visited_levels = {}
+
+DUNGEON = {
+    1: {
+        "map": [
+            [".", ".", ".",".", ".", ".","W", "G", "G"],
+            [".", ".", ".","W", ".", "W","W", "G", "G"],
+            ["$", ".", ".","W", ".", ".",".", ".", "S"]
+        ],
+        "stairs":{
+            (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
+        },
+        "monsters":[
+            {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
+            {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5}
+        ],
+        "shop":{
+            "Small Health Potion": 10,
+            "Bread": 5,
+            "Iron Helmet": 50,
+        },
+    },
+
+    2: {
+        "map": [
+            [".",".",".","G","G",".",".",".","G","G",],
+            [".",".",".","G","G",".",".","H","G","G",],
+            [".","H",".","G","G",".",".",".","G","G",],
+            [".",".",".","G",".","H",".",".","G","G",],
+            [".","T","T","G","S","W","W","W","G","G",],
+            [".","T","T","G","G",".",".","W","G","G",],
+            [".",".",".","G","G",".",".","W","G","G",],
+            [".",".",".","G","G","H","H",".","G","G",],
+            [".",".",".","G","G",".",".",".","G","G",],
+            [".",".",".","G","G",".",".",".","G","G",],
+        ],
+        "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
+                  },
+        "monsters": [
+            {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 10},
+            {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5},
+            {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5}
+        ]
+    }
+}
+
+
+TILE_EFFECTS = {
+        "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
+        "G": {"msg": "GOLD! +5 GP", "gp": 5, "consume": "."},
+        "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
+        "W": {"msg": "A solid wall.", "block": True},
+        "S": {"msg": "You begin to travel to another floor.", "teleport": True},
+        "$": {"msg": "Welcome {name}, come and see my wares", "shop": True},
+    }
 
 MONSTERS = {
     "Ghoul": {
@@ -141,7 +149,7 @@ MONSTERS = {
         }
     }
 }
-visited_levels = {}
+
 
 LOOT_DATA = {
     "common": ["Rusty Sword", "Small Health Potion", "Leather Scraps"],
@@ -149,35 +157,54 @@ LOOT_DATA = {
     "epic": [],
     "legendary": ["Excalibur", "Dragon Scale Armor"]
 }
-ITEMS = { #Todo use equipment in the equip screen
+ITEMS = {
+    #///CONSUMABLES///
+    "Small Health Potion": {
+        "type": "consumable",
+        "value": 100
+    },
+    "Bread":{
+        "type": "consumable",
+        "value": 50,
+    },
+
+
+
+
 
     #///EQUIPMENT///
     "Iron Helmet": {
+        "value": 200,
         "type": "equipment",
         "slot": "Helmet",
         "stats": {"accuracy": 5, "crit_chance": 4, "regen": 3, "max_hp": 2, "armor": 7, "dread": 404, "vigor": 2},
     },
     "Iron Leggings": {
+            "value": 200,
             "type": "equipment",
             "slot": "Leggings",
             "stats": {"accuracy": 5, "vigor": 2},
         },
     "Iron Boots": {
+            "value": 200,
             "type": "equipment",
             "slot": "Boots",
             "stats": {"accuracy": 5, "vigor": 2},
         },
     "Iron Chestplate": {
+            "value": 200,
             "type": "equipment",
             "slot": "Chestplate",
             "stats": {"accuracy": 5, "vigor": 2},
         },
     "Iron Sword": {
+            "value": 200,
             "type": "equipment",
             "slot": "Sword",
             "stats": {"accuracy": 5, "vigor": 2},
         },
     "Steel Helmet": {
+            "value": 200,
             "type": "equipment",
             "slot": "Helmet",
             "stats": {"accuracy": 5, "vigor": 2},

@@ -13,7 +13,8 @@ def msg(text, style="standard", text1="", text2="", text3=""):
         "loot": ("=", "$"),
         "error": ("!", "X"),
         "death": ("X", "X"),
-        "skill": ("%", "&")
+        "skill": ("%", "&"),
+        "shop": ("%", "$")
     }
 
     border_char, side_char = styles.get(style, ("-", "|"))
@@ -351,6 +352,50 @@ def load_level(level_id):
     # including the nested lists, so the original stays safe!
     return copy.deepcopy(data.DUNGEON[level_id])
 
+
+def check_tile_event(player, new_pos, current_level):
+    # 1. Use the data from current_level
+    current_map = current_level['map']
+    width = current_level["width"]
+    height = current_level["height"]
+    nx, ny = new_pos[0], new_pos[1]
+    tile = current_map[ny][nx]
+    next_state = "EXPLORE"
+
+    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
+    if not (0 <= nx < width and 0 <= ny < height):
+        msg("The edge of the world blocks you!")
+        pause()
+        return player, next_state
+
+    player["x"] = nx
+    player["y"] = ny
+
+    if tile in data.TILE_EFFECTS:
+        effect = data.TILE_EFFECTS[tile]
+
+        if effect.get("block"):
+            msg(effect["msg"])
+            pause()
+            return player, "EXPLORE"  # Stay in explore if blocked
+
+
+        # Apply standard rewards (HP/GP)
+        player["hp"] = min(player["max_hp"], player["hp"] + effect.get("hp", 0))
+        player["gp"] += effect.get("gp", 0)
+
+        # Trigger the State Change if the tile is a Shop
+        if effect.get("shop"):
+            print("DEBUG: Shop tile detected!")
+            pause()
+            next_state = "SHOP"
+
+        if "consume" in effect:
+            current_map[ny][nx] = effect["consume"]
+
+    return player, next_state
+
+'''
 def check_tile_event(player, new_pos, current_level):
     nx, ny = new_pos
 
@@ -389,6 +434,9 @@ def check_tile_event(player, new_pos, current_level):
         # 4. Handle Consuming
         if "consume" in effect:
             current_map[ny][nx] = effect["consume"]
+            
+        if "SHOP" in effect:
+            return "SHOP"
 
         if "teleport" in effect:
             cords = (ny, nx)
@@ -411,6 +459,7 @@ def check_tile_event(player, new_pos, current_level):
             pause()
     player["x"], player["y"] = nx, ny
     return player
+'''
 
 
 def use_item(item_name):
@@ -434,7 +483,7 @@ def use_item(item_name):
 def show_inventory():
     page = 0
     items_per_page = 6
-    categories = ["all", "food", "equipment", "quest"]
+    categories = ["all", "consume", "equipment", "quest"]
     cat_idx = 0
 
     while True:
@@ -664,7 +713,9 @@ def show_stats_screen():
                 print(f"{slot.capitalize()}:{display_item: >{width - len(slot)}}")
 
 
-            #TODO make equipment stats matter
+            #TODO make a skilltree
+            #TODO make a crafting system
+            #TODO make a shop
 
 
         # 3. Footer and Input
@@ -867,3 +918,140 @@ def get_current_stat(stat_name):
             bonus += item_bonuses.get(stat_name, 0)
 
     return base_value + bonus
+
+
+def show_shop_screen(floor_id):
+    page = 0
+    items_per_page = 6
+    categories = ["all", "consume", "equipment", "material"]
+    cat_idx = 0
+    mode = "buy"  # buy or sell
+
+    while True:
+        clear_screen()
+        draw_stats()  # Your existing stats display
+        current_cat = categories[cat_idx]
+
+        # Determine which data source to use based on mode
+        if mode == "buy":
+            source_data = data.DUNGEON[floor_id]["shop"]
+            title = f"MERCHANT (BUYING - {current_cat.upper()})"
+        else:
+            source_data = data.PLAYER["inventory"]
+            title = f"YOUR PACK (SELLING - {current_cat.upper()})"
+
+        print(f"======= {title} =======")
+
+        # --- FILTERING LOGIC ---
+        all_item_names = list(sorted(source_data.keys()))
+
+        if current_cat == "all":
+            filtered_names = all_item_names
+        else:
+            filtered_names = [
+                name for name in all_item_names
+                if data.ITEMS.get(name, {}).get("type") == current_cat
+            ]
+
+        total_items = len(filtered_names)
+
+        # --- DISPLAY LOGIC ---
+        if total_items == 0:
+            print(f"\n   (No {current_cat} items)   \n")
+            for _ in range(items_per_page - 2): print()
+        else:
+            start_idx = page * items_per_page
+            end_idx = start_idx + items_per_page
+            page_items = filtered_names[start_idx:end_idx]
+
+            for i, name in enumerate(page_items, start_idx + 1):
+                # Get price based on mode
+                if mode == "buy":
+                    # 1. Look up the price from the master ITEMS list
+                    price = data.ITEMS[name]["value"]
+
+                    # 2. Look up the STOCK from the specific DUNGEON floor
+                    # We use the 'name' to get the number from the shop dictionary
+                    stock = data.DUNGEON[floor_id]["shop"][name]
+
+                    # 3. Print the line with the actual stock number
+                    print(f"{i}. {name[:18]:<18} | {price: >4} GP | x{stock: >2}")
+                else:
+                    # Sell for 50% of the buy price in data.ITEMS
+                    price = data.ITEMS.get(name, {}).get("value", 10) // 2
+                    count = data.PLAYER["inventory"][name]
+                    print(f"{i}. {name[:18]:<18} | {price: >4} GP | x{count: >2}")
+
+            for _ in range(items_per_page - len(page_items)):
+                print()
+
+            total_pages = (total_items - 1) // items_per_page + 1
+            print(f"\n--- Page {page + 1} of {total_pages} ---")
+
+        print("=" * 40)
+        print("(A/D) Page | (W/S) Cat | (T)oggle Mode | (Q)uit")
+
+        choice = input("> ").lower()
+
+        # Logic for switching
+        if choice == 'q':
+            break
+        elif choice == 't':
+            mode = "sell" if mode == "buy" else "buy"
+            page = 0  # Reset page on mode swap
+        elif choice == 'w':
+            cat_idx = (cat_idx - 1) % len(categories)
+            page = 0
+        elif choice == 's':
+            cat_idx = (cat_idx + 1) % len(categories)
+            page = 0
+        elif choice == 'a' and page > 0:
+            page -= 1
+        elif choice == 'd' and (page + 1) * items_per_page < total_items:
+            page += 1
+
+        # --- TRANSACTION LOGIC ---
+        elif choice.isdigit():
+            selection = int(choice)
+            if 1 <= selection <= total_items:
+                chosen_name = filtered_names[selection - 1]
+
+                if mode == "buy":
+                    price = data.ITEMS[chosen_name]["value"]
+                    if data.PLAYER["gp"] >= price:
+                        data.PLAYER["gp"] -= price
+                        # Add to player inventory
+                        data.PLAYER["inventory"][chosen_name] = data.PLAYER["inventory"].get(chosen_name, 0) + 1
+                        msg(f"Bought {chosen_name}!", "shop")
+                        pause()
+                    else:
+                        msg("Not enough gold!", "shop")
+                        pause()
+
+                elif mode == "sell":
+                    item_data = data.ITEMS.get(chosen_name, {})
+                    base_price = item_data.get("value", 0)
+                    sell_price = base_price // 2
+                    if base_price <= 0:
+                        msg("The merchant shakes their head. 'I have no use for this junk.'", "shop")
+                        pause()
+                        continue  # Skip the rest of the transaction and restart the loop
+                    # 2. Add gold to player
+                    data.PLAYER["gp"] += sell_price
+
+                    # 3. Remove from player's pack
+                    data.PLAYER["inventory"][chosen_name] -= 1
+                    if data.PLAYER["inventory"][chosen_name] <= 0:
+                        del data.PLAYER["inventory"][chosen_name]
+
+                    # 4. ADD TO MERCHANT'S STOCK
+                    # Access the shop dictionary for the current floor
+                    shop_stock = data.DUNGEON[floor_id]["shop"]
+
+                    if chosen_name in shop_stock:
+                        shop_stock[chosen_name] += 1
+                    else:
+                        # If the merchant didn't sell this before, they do now!
+                        shop_stock[chosen_name] = 1
+
+                    msg(f"Sold {chosen_name} for {sell_price} GP. The merchant adds it to their shelf.", "shop")
