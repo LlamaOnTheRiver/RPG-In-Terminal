@@ -43,9 +43,9 @@ visited_levels = {}
 DUNGEON = {
     1: {
         "map": [
-            [".", ".", ".",".", ".", ".","W", "G", "G"],
+            ["$", ".", ".",".", ".", ".","W", "G", "G"],
             [".", ".", ".","W", ".", "W","W", "G", "G"],
-            ["$", ".", ".","W", ".", ".",".", ".", "S"]
+            [".", ".", ".","W", ".", ".",".", ".", "S"]
         ],
         "stairs":{
             (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
@@ -92,7 +92,8 @@ TILE_EFFECTS = {
         "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
         "W": {"msg": "A solid wall.", "block": True},
         "S": {"msg": "You begin to travel to another floor.", "teleport": True},
-        "$": {"msg": "Welcome {name}, come and see my wares", "shop": True},
+        "$": {"msg": "", "shop": True},
+        "E": {}
     }
 
 MONSTERS = {
@@ -210,4 +211,19 @@ ITEMS = {
             "slot": "Helmet",
             "stats": {"accuracy": 5, "vigor": 2},
         },
+}
+NPC_EVENTS = {
+    (2, 5, 5): { # The coordinates of the NPC
+        "name": "The Hermit",
+        "dialogue": [
+            "You look... unsettled, {name}.",
+            "I have a draught that clears the mind, but it is bitter.",
+            "Will you drink, or do you prefer your madness?"
+        ],
+        "choices": {
+            "1": "Drink the Draught (-10 Gold, +20 Sanity)",
+            "2": "Refuse (Nothing happens)",
+            "3": "Rob the Old Man (+50 Gold, +30 Madness)"
+        }
+    }
 }

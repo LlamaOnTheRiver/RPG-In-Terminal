@@ -17,6 +17,7 @@ def main():
     # Create the local fog map
     fog_map = [[" " for _ in range(current_level["width"])]
                for _ in range(current_level["height"])]
+    #data.PLAYER['name'] = input("Please enter your name: ")
 
     while True:
         if game_state == "EXPLORE":

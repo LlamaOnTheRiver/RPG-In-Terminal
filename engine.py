@@ -323,7 +323,7 @@ def draw_stats():
         color_san = "\033[93m"  # Yellow
 
 
-    print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']} | Map:{data.PLAYER['current_map']}")
+    print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']}  \nMap:{data.PLAYER['current_map']} | Pos:{data.PLAYER['x'], data.PLAYER['y']}")
     print("~" * 40)
 
 def draw_exploration_screen(current_level, fog_map):
@@ -387,6 +387,7 @@ def check_tile_event(player, new_pos, current_level):
 
         # Trigger the State Change if the tile is a Shop
         if effect.get("shop"):
+            msg(f"Welcome {data.PLAYER['name']} I may have something, that might interest you.", style="shop")
             next_state = "SHOP"
 
         if "consume" in effect:
@@ -999,3 +1000,7 @@ def show_shop_screen(floor_id):
                         shop_stock[chosen_name] = 1
 
                     msg(f"Sold {chosen_name} for {sell_price} GP. The merchant adds it to their shelf.", style="shop")
+def skill_check(skill_name, number):
+    p = data.PLAYER['stats'][skill_name]
+    modifier = random.randint(1, 20)
+    return p + modifier >= number
