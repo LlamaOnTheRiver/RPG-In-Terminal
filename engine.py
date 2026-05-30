@@ -43,25 +43,7 @@ def msg(*lines, style="standard", pause_msg=True):
             if pause_msg:
                 pause()
 
-'''
-def msg(text, style="standard", text1="", text2="", text3=""):
-    # Define different border characters for different event types
-    
 
-    
-
-    # Calculate the width based on the text length
-    width = max(len(text), len(text1), len(text2), len(text3))
-
-
-    # Print the "pretty" box
-    print(border_char * (width + 4))
-    print(f"{side_char} {text.ljust(width)} {side_char}")
-    if text1: print(f"{side_char} {text1.ljust(width)} {side_char}")
-    if text2: print(f"{side_char} {text2.ljust(width)} {side_char}")
-    if text3: print(f"{side_char} {text3.ljust(width)} {side_char}")
-    print(border_char * (width + 4))
-'''
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     # 1. Use the level_id we were handed!
     if level_id not in data.visited_levels:
@@ -297,7 +279,6 @@ def battle(active_enemy, current_level):
                     temp_hp = 0
                     draw_battle_screen(enemy, temp_hp)
                     xp_screen(enemy)
-                    pause()
                     # Remove the monster from the live list
                     current_level['monsters'].remove(active_enemy)
                     return
@@ -526,11 +507,13 @@ def xp_screen(enemy):
     loot = get_random_loot(enemy)
     data.PLAYER["xp"] += xp
     xp_msg = ""
-    if data.PLAYER["xp"] >= (data.PLAYER["level"] + 1) * 100:
-        data.PLAYER["xp"] -= data.PLAYER["level"] * 100
+    if data.PLAYER["xp"] >= (data.PLAYER["level"]) * 50:
+        data.PLAYER["xp"] -= data.PLAYER["level"] * 50
         data.PLAYER["level"] += 1
         xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
-    msg(f"You have gained. {xp} XP","loot" ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", xp_msg, style="loot")
+    msg(f"You have gained {xp} XP." ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", style="loot")
+    if xp_msg:
+        msg(xp_msg, style="loot")
     data.PLAYER["gp"] += gp
     data.PLAYER["sanity"] -= enemy["madness"]
     if loot in data.PLAYER["inventory"]:
@@ -562,7 +545,7 @@ def death_check():
 
 def helper_confirm(skill):
     clear_screen()
-    msg(f"Are you sure you want to train {skill}? (Y/N)",style="skill")
+    msg(f"Are you sure you want to train {skill}? (Y/N)",style="skill", pause_msg=False)
     choice = input("> ").lower()
     if choice == 'y':
         return True

@@ -33,7 +33,7 @@ PLAYER = {
             "Sword": 3,
             "Water": 4,
             "Gold": 5,
-            "Poop": 3,
+            "XP Pot": 13,
             "Iron Helmet": 1,
             "Steel Helmet": 2,
         }

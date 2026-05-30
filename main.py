@@ -46,7 +46,6 @@ def main():
 
                 engine.clear_screen()
                 engine.msg("Your time has not yet come warrior,","on your feet.", style='death')
-                engine.pause()
                 continue
             elif death_check() == "sanity":
                 break
