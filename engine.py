@@ -47,16 +47,16 @@ def msg(*lines, style="standard", pause_msg=True):
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     # 1. Use the level_id we were handed!
     if level_id not in data.visited_levels:
-        data.visited_levels[level_id] = copy.deepcopy(data.DUNGEON[level_id]["map"])
+        data.visited_levels[level_id] = copy.deepcopy(data.DUNGEON[level_id]['map'])
 
     # 2. Get the map and calculate dimensions
     current_map = data.visited_levels[level_id]
     h = len(current_map)
     w = len(current_map[0]) if h > 0 else 0
-    inv = data.PLAYER["inventory"]
+    inv = data.PLAYER['inventory']
 
     # 3. Get monsters for THIS specific level_id
-    fresh_monsters = copy.deepcopy(data.DUNGEON[level_id]["monsters"])
+    fresh_monsters = copy.deepcopy(data.DUNGEON[level_id]['monsters'])
 
     return {
         "map": current_map,
@@ -67,9 +67,9 @@ def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
     }
 
 def place_player_on_map(temp_view):
-        px = data.PLAYER["x"]
-        py = data.PLAYER["y"]
-        colored_marker = data.PLAYER["marker"]
+        px = data.GAME_STATE['x']
+        py = data.GAME_STATE['y']
+        colored_marker = data.GAME_STATE['marker']
 
         if 0 <= py < len(temp_view) and 0 <= px < len(temp_view[0]):
             temp_view[py][px] = colored_marker
@@ -79,7 +79,8 @@ def place_player_on_map(temp_view):
 
 def move_player():
     # Remove the while loop and the drawing from here!
-    move = input("Move (wasd) | q (quit) | i(Inventory):").strip().lower()
+    print("Move (wasd) |  (Q)uit | (I)nventory:")
+    move = input(">...").strip().lower()
 
     if move == "w": return 0, -1
     if move == "s": return 0, 1
@@ -90,7 +91,7 @@ def move_player():
     if move == "f": return 11, 11
 
     # If they hit a random key
-    msg("Hero ponders about life", "But does he really Ponder?", "Maybe he just sits there for long periods of time", "Or maybe standing is a thing?", "Should we go sitting?", "Yes sitting will do",style="shop",)
+    msg("Hero ponders about life")
     return 0, 0
 
 
@@ -103,11 +104,11 @@ def clear_screen():
 def pause():
     input(">...")
 
-def update_visibility(fog_map, current_level, radius=2):
+def update_visibility(fog_map, current_level, radius=1):
     w = current_level['width']
     h = current_level['height']
     grid = current_level['map']
-    px, py = data.PLAYER["x"], data.PLAYER["y"]
+    px, py = data.GAME_STATE['x'], data.GAME_STATE['y']
 
     for dy in range(-radius, radius + 1):
         for dx in range(-radius, radius + 1):
@@ -123,8 +124,8 @@ def get_viewport(view, radius=2):
     width = len(view[0]) if height > 0 else 0
     size = (radius * 2) + 1
 
-    start_y = max(0, min(data.PLAYER["y"] - radius, height - size))
-    start_x = max(0, min(data.PLAYER["x"] - radius, width - size))
+    start_y = max(0, min(data.GAME_STATE['y'] - radius, height - size))
+    start_x = max(0, min(data.GAME_STATE['x'] - radius, width - size))
 
     viewport = []
     for y in range(start_y, start_y + size):
@@ -136,49 +137,50 @@ def get_viewport(view, radius=2):
     return viewport
 
 def move_monsters(current_level, view_radius=3):
-    monsters = current_level["monsters"]
-    # NESW mapping
-    directions = {1: (0, -1), 2: (0, 1), 3: (1, 0), 4: (-1, 0)}
+    monsters = current_level['monsters']
+
     for m in monsters:
-        dist_x = abs(m["x"] - data.PLAYER["x"])
-        dist_y = abs(m["y"] - data.PLAYER["y"])
+        player_x = data.GAME_STATE['x']
+        player_y = data.GAME_STATE['y']
 
-        nx, ny = m["x"], m["y"]
+        dx = player_x - m['x']
+        dy = player_y - m['y']
 
-        # 1. HUNTING LOGIC
-        if dist_x <= view_radius and dist_y <= view_radius:
-            if m["x"] < data.PLAYER["x"]:
-                nx += 1
-            elif m["x"] > data.PLAYER["x"]:
-                nx -= 1
-            elif m["y"] < data.PLAYER["y"]:
-                ny += 1
-            elif m["y"] > data.PLAYER["y"]:
-                ny -= 1
+        nx, ny = m['x'], m['y']
 
-        # 2. WANDERING LOGIC (If not hunting)
+        if abs(dx) <= view_radius and abs(dy) <= view_radius:
+
+            if dx != 0 and dy != 0:
+                if random.choice([True, False]):
+                    nx += 1 if dx > 0 else -1
+                else:
+                    ny += 1 if dy > 0 else -1
+
+            elif dx != 0:
+                nx += 1 if dx > 0 else -1
+
+            elif dy != 0:
+                ny += 1 if dy > 0 else -1
+
         else:
-            num = random.randint(1, 4)
-            dx, dy = directions[num]
-            nx += dx
-            ny += dy
+            # wandering logic
+            pass
+        new_pos = [nx, ny]
+        if is_passable(new_pos):
+            m['x'], m['y'] = nx, ny
 
-        # 3. VALIDATION (The "is_passable" check)
-        # Use the function we discussed to make sure they don't hit walls!
-        if is_passable(nx, ny, current_level):
-            m["x"], m["y"] = nx, ny
-
+            
 def place_entities(temp_view, monsters):
     for m in monsters:
-        mx, my = m["x"], m["y"]
+        mx, my = m['x'], m['y']
         if 0 <= my < len(temp_view) and 0 <= mx < len(temp_view[0]):
             # Only draw the monster if the tile isn't "Fog" (empty space)
             if temp_view[my][mx] != " ":
-                temp_view[my][mx] = m["marker"]
+                temp_view[my][mx] = m['marker']
 
 def check_for_combat(monsters):
     for monster in monsters:
-        if monster["x"] == data.PLAYER["x"] and monster["y"] == data.PLAYER["y"]:
+        if monster['x'] == data.GAME_STATE['x'] and monster['y'] == data.GAME_STATE['y']:
             return monster # Return the monster we bumped into
     return None
 
@@ -203,23 +205,26 @@ def draw_battle_screen(enemy, temp_hp):
     print("-" * width)
 
 
-def is_passable(nx, ny, current_level):
-    # Access everything from the one dictionary
-    w = current_level["width"]
-    h = current_level["height"]
-    m_grid = current_level["map"]
+def is_passable(new_pos):
+    level_id = data.GAME_STATE['current_map']
+    # Look directly at the stored map
+    m_grid = data.visited_levels[level_id]
+
+    h = len(m_grid)
+    w = len(m_grid[0])
+    nx, ny = new_pos
 
     # 1. BOUNDARY CHECK
     if nx < 0 or nx >= w or ny < 0 or ny >= h:
         return False
 
+    # 2. COLLISION CHECK (Fixed the quotes!)
     if m_grid[ny][nx] in ["W", "#"]:
         return False
-
     return True
 
 def battle(active_enemy, current_level):
-    msg(f"A wild {active_enemy['name']} appeared!", style="battle")
+    msg(f"A wild {active_enemy['name']} appeared!", style="combat")
     # Update player stats based on current level/points
     stats = get_derived_stats()
     # [atk, accuracy, crit_chance, regen, max_hp, armor]
@@ -227,15 +232,15 @@ def battle(active_enemy, current_level):
     # Now use the derived values
 
 
-    enemy = data.MONSTERS[active_enemy["name"]]
+    enemy = data.MONSTERS[active_enemy['name']]
     # Extract all lines after the first one
     # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
-    extra_lines = enemy["intro"][1:4]
+    extra_lines = enemy['intro'][1:4]
 
     clear_screen()
 
     # Unpack the list into the optional parameters
-    msg(enemy["intro"][0], *extra_lines, style="battle")
+    msg(enemy['intro'][0], *extra_lines, style='combat')
     temp_hp = enemy['hp']
     while True:
         p_hit = random.randint(1, 100) <= stats[1]
@@ -247,19 +252,20 @@ def battle(active_enemy, current_level):
         p_armor = stats[5]
         clear_screen()
         draw_battle_screen(enemy, temp_hp)
-        msg(f"What will you do?", style="battle", pause_msg=False)
+        msg(f"What will you do?", style="combat", pause_msg=False)
         action = input("(A)ttack or (R)un? ").lower()
         def atk():
+            p = data.PLAYER
             draw_battle_screen(enemy, temp_hp)
             # Extract all lines after the first one
             # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
-            cry_lines = enemy["cry"][1:4]
+            cry_lines = enemy['cry'][1:4]
 
             # Unpack the list into the optional parameters
-            msg(enemy["cry"][0], *cry_lines, style="battle")
+            msg(enemy['cry'][0], *cry_lines, style="combat")
             draw_battle_screen(enemy, temp_hp)
-            msg(f"{enemy['name']} does {enemy['dmg']} damage!", style="battle")
-            data.PLAYER['hp'] -= enemy['dmg'] - p_armor
+            msg(f"{enemy['name']} does {enemy['dmg']} damage!", style="combat")
+            p['hp'] -= max(enemy['dmg'] - p_armor, 0)
             if data.PLAYER['hp'] <= 0:
                 data.PLAYER['hp'] = 0
                 return True
@@ -269,11 +275,12 @@ def battle(active_enemy, current_level):
         if action == "a":
             # Handle combat...
             if p_hit:
+                damage = p_atk
                 if p_crit:
                     clear_screen()
                     draw_battle_screen(enemy, temp_hp)
-                    msg(f"{data.PLAYER['name']} landed a crit and did {p_atk * 2} damage!", style="battle")
-                    temp_hp -= p_atk
+                    damage *= 2
+                    msg(f"{data.PLAYER['name']} landed a crit and did {damage} damage!", style="combat")
                 temp_hp -= p_atk
                 if temp_hp <= 0:
                     temp_hp = 0
@@ -281,27 +288,27 @@ def battle(active_enemy, current_level):
                     xp_screen(enemy)
                     # Remove the monster from the live list
                     current_level['monsters'].remove(active_enemy)
-                    return
+                    return "EXPLORE"
                 else:
                     if atk():
-                        return
+                        return "GAME OVER"
             else:
                 clear_screen()
                 draw_battle_screen(enemy, temp_hp)
-                msg(f"{data.PLAYER['name']} missed their attack!", style="battle")
+                msg(f"{data.PLAYER['name']} missed their attack!", style="combat")
                 if atk():
-                    return
+                    return "GAME OVER"
         elif action == "r":
             num = random.randint(1, 3)
             if num == 3:
-                msg(f"You managed to get away from the {enemy["name"]}", style="battle")
+                msg(f"You managed to get away from the {enemy['name']}", style="combat")
                 if active_enemy in current_level['monsters']:
                     current_level['monsters'].remove(active_enemy)
-                return
+                return "EXPLORE"
             else:
-                msg(f"The {enemy["name"]} wont let you escape", style="battle")
+                msg(f"The {enemy['name']} wont let you escape", style="combat")
                 if atk():
-                    return
+                    return "GAME OVER"
 
 def sanity_bar():
     num = data.PLAYER['sanity'] // 10
@@ -310,20 +317,20 @@ def sanity_bar():
 
 def draw_stats():
     color = "\033[92m"  # Green
-    if data.PLAYER["hp"] <= 0.25 * data.PLAYER["max_hp"]:
+    if data.PLAYER['hp'] <= 0.25 * data.PLAYER['max_hp']:
         color = "\033[91m"  # Red
-    elif data.PLAYER["hp"] <= 0.6 * data.PLAYER["max_hp"] :
+    elif data.PLAYER['hp'] <= 0.6 * data.PLAYER['max_hp'] :
         color = "\033[93m"  # Yellow
     reset = "\033[0m"
 
     color_san = "\033[92m"  # Green
-    if data.PLAYER["sanity"] <= 40:
+    if data.PLAYER['sanity'] <= 40:
         color_san = "\033[91m"  # Red
-    elif data.PLAYER["sanity"] <= 70:
+    elif data.PLAYER['sanity'] <= 70:
         color_san = "\033[93m"  # Yellow
 
 
-    print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']}  \nMap:{data.PLAYER['current_map']} | Pos:{data.PLAYER['x'], data.PLAYER['y']}")
+    print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']}  \nMap:{data.GAME_STATE['current_map']} | Pos:{data.GAME_STATE['x'], data.GAME_STATE['y']}")
     print("~" * 40)
 
 def draw_exploration_screen(current_level, fog_map):
@@ -356,34 +363,35 @@ def load_level(level_id):
     return copy.deepcopy(data.DUNGEON[level_id])
 
 
-def check_tile_event(player, new_pos, current_level):
+def check_tile_event(new_pos,current_level):
     # 1. Use the data from current_level
+    g = data.GAME_STATE
+    p = data.PLAYER
     current_map = current_level['map']
-    width = current_level["width"]
-    height = current_level["height"]
     nx, ny = new_pos[0], new_pos[1]
     tile = current_map[ny][nx]
     next_state = "EXPLORE"
 
-    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
-    if not (0 <= nx < width and 0 <= ny < height):
-        msg("The edge of the world blocks you!")
-        return player, next_state
 
-    player["x"] = nx
-    player["y"] = ny
+
+    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
+    new_pos = (nx, ny)
+    if is_passable(new_pos):
+        g['x'], g['y'] = nx, ny
+    else:
+        msg("The path is blocked!")
 
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
 
         if effect.get("block"):
-            msg(effect["msg"])
-            return player, "EXPLORE"  # Stay in explore if blocked
+            msg(effect['msg'])
+            return next_state # Stay in EXPLORE if blocked
 
 
         # Apply standard rewards (HP/GP)
-        player["hp"] = min(player["max_hp"], player["hp"] + effect.get("hp", 0))
-        player["gp"] += effect.get("gp", 0)
+        p['hp'] = min(p['max_hp'], p['hp'] + effect.get("hp", 0))
+        p['gp'] += effect.get("gp", 0)
 
         # Trigger the State Change if the tile is a Shop
         if effect.get("shop"):
@@ -391,22 +399,22 @@ def check_tile_event(player, new_pos, current_level):
             next_state = "SHOP"
 
         if "consume" in effect:
-            current_map[ny][nx] = effect["consume"]
+            current_map[ny][nx] = effect['consume']
 
         if "teleport" in effect:
             cords = (ny, nx)
             # Grab all the secret data from the CURRENT map before changing anything
-            stair_data = data.DUNGEON[player["current_map"]]["stairs"][cords]
+            stair_data = data.DUNGEON[g['current_map']]['stairs'][cords]
 
             # Now update the player using that saved data
-            data.PLAYER["current_map"] = stair_data["target_map"]
-            data.PLAYER["x"] = stair_data["target_x"]
-            data.PLAYER["y"] = stair_data["target_y"]
+            g['current_map'] = stair_data['target_map']
+            g['x'] = stair_data['target_x']
+            g['y'] = stair_data['target_y']
             if "msg" in effect:
-                msg(effect["msg"])
-            return data.PLAYER, next_state
+                msg(effect['msg'])
+            return next_state
 
-    return player, next_state
+    return next_state
 
 def use_item(item_name):
     # Check the registry in the items file
@@ -417,9 +425,9 @@ def use_item(item_name):
         effect_function()
 
         # Handle the inventory subtraction
-        data.PLAYER["inventory"][item_name] -= 1
-        if data.PLAYER["inventory"][item_name] <= 0:
-            del data.PLAYER["inventory"][item_name]
+        data.PLAYER['inventory'][item_name] -= 1
+        if data.PLAYER['inventory'][item_name] <= 0:
+            del data.PLAYER['inventory'][item_name]
     else:
         msg(f"The {item_name} is a curious object, but you can't use it now.", style="error")
 
@@ -429,7 +437,7 @@ def use_item(item_name):
 def show_inventory():
     page = 0
     items_per_page = 6
-    categories = ["all", "consume", "equipment", "quest"]
+    categories = ['all", "consume", "equipment", "quest']
     cat_idx = 0
 
     while True:
@@ -439,7 +447,7 @@ def show_inventory():
         print(f"=== INVENTORY: {current_cat.upper()} ===")
 
         # --- FILTERING LOGIC ---
-        all_item_names = list(sorted(data.PLAYER["inventory"].keys()))
+        all_item_names = list(sorted(data.PLAYER['inventory'].keys()))
 
         if current_cat == "all":
             filtered_names = all_item_names
@@ -461,8 +469,8 @@ def show_inventory():
             end_idx = start_idx + items_per_page
             page_items = filtered_names[start_idx:end_idx]
 
-            for i, name in enumerate(page_items, start_idx + 1):
-                count = data.PLAYER["inventory"][name]
+            for i, name in enumerate(page_items, 1):
+                count = data.PLAYER['inventory'][name]
                 print(f"{i}. {name[:20]:<20} x{count}")
 
             for _ in range(items_per_page - len(page_items)):
@@ -485,20 +493,24 @@ def show_inventory():
             page = 0
         # Navigation
         elif choice == 'q':
-            break
+            return "EXPLORE"
         elif choice == 'a' and page > 0:
             page -= 1
         elif choice == 'd' and (page + 1) * items_per_page < total_items:
             page += 1
         # Use Item Logic
         elif choice.isdigit():
+            start_idx = page * items_per_page
+            end_idx = start_idx + items_per_page
+            page_items = filtered_names[start_idx:end_idx]
             selection = int(choice)
             if 1 <= selection <= total_items:
-                chosen_item = filtered_names[selection - 1]
+                chosen_item = page_items[selection - 1]
                 use_item(chosen_item)
 
 
 def xp_screen(enemy):
+    p = data.PLAYER
     # Calculate base XP based on monster toughness
     xp = int(0.25 * enemy['dmg'] * enemy['hp'])
 
@@ -506,21 +518,21 @@ def xp_screen(enemy):
     multipliers = [0.5, 0.75, 1.0, 1.25]
     gp = int(random.choice(multipliers) * xp)
     loot = get_random_loot(enemy)
-    data.PLAYER["xp"] += xp
+    p['xp'] += xp
     xp_msg = ""
-    if data.PLAYER["xp"] >= (data.PLAYER["level"]) * 50:
-        data.PLAYER["xp"] -= data.PLAYER["level"] * 50
-        data.PLAYER["level"] += 1
+    if p['xp'] >= (p['level']) * p['xp_curve']:
+        p['xp'] -= p['level'] * p['xp_curve']
+        p['level'] += 1
         xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
     msg(f"You have gained {xp} XP." ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", style="loot")
     if xp_msg:
         msg(xp_msg, style="loot")
-    data.PLAYER["gp"] += gp
-    data.PLAYER["sanity"] -= enemy["madness"]
-    if loot in data.PLAYER["inventory"]:
-        data.PLAYER["inventory"][loot] += 1
+    data.PLAYER['gp'] += gp
+    data.PLAYER['sanity'] -= enemy['madness']
+    if loot in data.PLAYER['inventory']:
+        data.PLAYER['inventory'][loot] += 1
     else:
-        data.PLAYER["inventory"][loot] = 1
+        data.PLAYER['inventory'][loot] = 1
 
 
 
@@ -582,7 +594,7 @@ def show_stats_screen():
             stats = [
                 ("Name", p['name']),
                 ("Level", p['level']),
-                ("XP", f"{p['xp']}/{p['level'] * 100}"),
+                ("XP", f"{p['xp']}/{p['level'] * p['xp_curve']}"),
                 ("Health",  f"{p['hp']}/{skills[4]}"),
                 ("Attack",  skills[0]),
                 ("Sanity", sanity_bar()),
@@ -655,7 +667,7 @@ def show_stats_screen():
 
         elif current_page == 4:
             width = 25
-            for slot, item in p["equipment"].items():
+            for slot, item in p['equipment'].items():
                 display_item = item if item else "Empty"
                 # Using your alignment logic!
                 print(f"{slot.capitalize()}:{display_item: >{width - len(slot)}}")
@@ -689,7 +701,7 @@ def show_stats_screen():
         elif choice == 'a':
             current_page = current_page - 1 if current_page > 1 else total_pages
         elif choice == 'q':
-            break
+            return "EXPLORE"
         # 5. Stat Spending Logic (only on page 2)
         if level_up:
             if choice == 'f' and p['stat_points'] > 0:
@@ -714,8 +726,6 @@ def show_stats_screen():
 
 
 def get_derived_stats():
-    # p is your data.PLAYER dictionary
-    p = data.PLAYER
     # ///MAIN STATS///
     dread = get_current_stat("dread")
     bastion = get_current_stat("bastion")
@@ -758,21 +768,21 @@ def equip_item(item_name):
         msg("This item cannot be equipped!", style="error")
         return
 
-    slot = item_info["slot"]
+    slot = item_info['slot']
 
     # 1. Take the current item off (if there is one) and put it in inventory
-    old_item = p["equipment"].get(slot)
+    old_item = p['equipment'].get(slot)
     if old_item:
-        p["inventory"][old_item] = p["inventory"].get(old_item, 0) + 1
+        p['inventory'][old_item] = p['inventory'].get(old_item, 0) + 1
         print(f"Unequipped {old_item}.")
 
     # 2. Put the new item on
-    p["equipment"][slot] = item_name
+    p['equipment'][slot] = item_name
 
     # 3. Remove the new item from inventory
-    p["inventory"][item_name] -= 1
-    if p["inventory"][item_name] <= 0:
-        del p["inventory"][item_name]
+    p['inventory'][item_name] -= 1
+    if p['inventory'][item_name] <= 0:
+        del p['inventory'][item_name]
 
     print(f"Successfully equipped {item_name} to {slot}!")
 
@@ -786,7 +796,7 @@ def show_equipment_picker():
         clear_screen()
         # --- THE FILTER ---
         # Look through inventory, but only keep items that have a 'slot' defined
-        all_items = sorted(p["inventory"].keys())
+        all_items = sorted(p['inventory'].keys())
         equippable_names = [
             name for name in all_items
             if "slot" in data.ITEMS.get(name, {})
@@ -797,9 +807,9 @@ def show_equipment_picker():
 
         print("--- SELECT EQUIPMENT ---")
         width = 25
-        for slot in p["equipment"]:
+        for slot in p['equipment']:
             # 1. Get the name of the item (e.g., "Iron Helmet") or "Empty" if None
-            item_name = p["equipment"][slot]
+            item_name = p['equipment'][slot]
             if item_name is None:
                 item_name = "Empty"
 
@@ -821,8 +831,8 @@ def show_equipment_picker():
 
             for i, name in enumerate(page_items, start_idx + 1):
                 item_data = data.ITEMS[name]
-                slot_type = item_data["slot"]
-                count = p["inventory"][name]
+                slot_type = item_data['slot']
+                count = p['inventory'][name]
                 # Display name and what slot it fits into
                 print(f"{i}. {name[:15]:<15} [{slot_type}] x{count}")
 
@@ -871,7 +881,7 @@ def get_current_stat(stat_name):
 def show_shop_screen(floor_id):
     page = 0
     items_per_page = 6
-    categories = ["all", "consume", "equipment", "material"]
+    categories = ['all", "consume", "equipment", "material']
     cat_idx = 0
     mode = "buy"  # buy or sell
 
@@ -882,10 +892,10 @@ def show_shop_screen(floor_id):
 
         # Determine which data source to use based on mode
         if mode == "buy":
-            source_data = data.DUNGEON[floor_id]["shop"]
+            source_data = data.DUNGEON[floor_id]['shop']
             title = f"MERCHANT (BUYING - {current_cat.upper()})"
         else:
-            source_data = data.PLAYER["inventory"]
+            source_data = data.PLAYER['inventory']
             title = f"YOUR PACK (SELLING - {current_cat.upper()})"
 
         print(f"======= {title} =======")
@@ -916,18 +926,18 @@ def show_shop_screen(floor_id):
                 # Get price based on mode
                 if mode == "buy":
                     # 1. Look up the price from the master ITEMS list
-                    price = data.ITEMS[name]["value"]
+                    price = data.ITEMS[name]['value']
 
                     # 2. Look up the STOCK from the specific DUNGEON floor
                     # We use the 'name' to get the number from the shop dictionary
-                    stock = data.DUNGEON[floor_id]["shop"][name]
+                    stock = data.DUNGEON[floor_id]['shop'][name]
 
                     # 3. Print the line with the actual stock number
                     print(f"{i}. {name[:18]:<18} | {price: >4} GP | x{stock: >2}")
                 else:
                     # Sell for 50% of the buy price in data.ITEMS
                     price = data.ITEMS.get(name, {}).get("value", 10) // 2
-                    count = data.PLAYER["inventory"][name]
+                    count = data.PLAYER['inventory'][name]
                     print(f"{i}. {name[:18]:<18} | {price: >4} GP | x{count: >2}")
 
             for _ in range(items_per_page - len(page_items)):
@@ -943,7 +953,7 @@ def show_shop_screen(floor_id):
 
         # Logic for switching
         if choice == 'q':
-            break
+            return "EXPLORE"
         elif choice == 't':
             mode = "sell" if mode == "buy" else "buy"
             page = 0  # Reset page on mode swap
@@ -965,11 +975,14 @@ def show_shop_screen(floor_id):
                 chosen_name = filtered_names[selection - 1]
 
                 if mode == "buy":
-                    price = data.ITEMS[chosen_name]["value"]
-                    if data.PLAYER["gp"] >= price:
-                        data.PLAYER["gp"] -= price
+                    price = data.ITEMS[chosen_name]['value']
+                    if data.PLAYER['gp'] >= price:
+                        data.PLAYER['gp'] -= price
+                        data.DUNGEON[floor_id]['shop'][chosen_name] -= 1
+                        if data.DUNGEON[floor_id]['shop'][chosen_name] <= 0:
+                            del data.DUNGEON[floor_id]['shop'][chosen_name]
                         # Add to player inventory
-                        data.PLAYER["inventory"][chosen_name] = data.PLAYER["inventory"].get(chosen_name, 0) + 1
+                        data.PLAYER['inventory'][chosen_name] = data.PLAYER['inventory'].get(chosen_name, 0) + 1
                         msg(f"Bought {chosen_name}!", style="shop")
                     else:
                         msg("Not enough gold!", style="shop")
@@ -982,16 +995,16 @@ def show_shop_screen(floor_id):
                         msg("The merchant shakes their head. 'I have no use for this junk.'", style="shop")
                         continue  # Skip the rest of the transaction and restart the loop
                     # 2. Add gold to player
-                    data.PLAYER["gp"] += sell_price
+                    data.PLAYER['gp'] += sell_price
 
                     # 3. Remove from player's pack
-                    data.PLAYER["inventory"][chosen_name] -= 1
-                    if data.PLAYER["inventory"][chosen_name] <= 0:
-                        del data.PLAYER["inventory"][chosen_name]
+                    data.PLAYER['inventory'][chosen_name] -= 1
+                    if data.PLAYER['inventory'][chosen_name] <= 0:
+                        del data.PLAYER['inventory'][chosen_name]
 
                     # 4. ADD TO MERCHANT'S STOCK
                     # Access the shop dictionary for the current floor
-                    shop_stock = data.DUNGEON[floor_id]["shop"]
+                    shop_stock = data.DUNGEON[floor_id]['shop']
 
                     if chosen_name in shop_stock:
                         shop_stock[chosen_name] += 1

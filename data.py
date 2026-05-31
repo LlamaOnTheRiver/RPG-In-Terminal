@@ -1,14 +1,11 @@
 PLAYER = {
         "name": "Hero",
-        "x": 1,
-        "y": 1,
-        "current_map": 1,
         "hp": 50,
         "gp": 0,
         "xp": 0,
+        "xp_curve": 50,
         "level": 1,
         "stat_points": 0,
-        "marker": "\033[94mP\033[0m",
         "max_hp": 50,
         "max_sanity": 100,
         "sanity": 100,
@@ -37,6 +34,14 @@ PLAYER = {
             "Iron Helmet": 1,
             "Steel Helmet": 2,
         }
+}
+GAME_STATE = {
+        "x": 1,
+        "y": 1,
+        "current_map": 1,
+        "marker": "\033[94mP\033[0m",
+        "fog_map": []
+
 }
 visited_levels = {}
 
