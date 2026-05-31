@@ -49,8 +49,8 @@ DUNGEON = {
     1: {
         "map": [
             ["$", ".", ".",".", ".", ".","W", "G", "G"],
-            [".", ".", ".","W", ".", "W","W", "G", "G"],
-            [".", ".", ".","W", ".", ".",".", ".", "S"]
+            ["T", ".", ".","W", ".", "W","W", "G", "G"],
+            ["T", ".", ".","W", ".", ".",".", ".", "S"]
         ],
         "stairs":{
             (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
@@ -71,7 +71,7 @@ DUNGEON = {
             [".",".",".",".","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
             [".",".",".",".","W",".",".",".",".",".",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","W","W","W",".","W","W","W","W","W","W","W",".",".",".",".",".","."],
-            ["W",".","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
+            ["W","E","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".",".",".",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".",".",".",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W","W","W","W","W","W","W"],
@@ -98,7 +98,7 @@ TILE_EFFECTS = {
         "W": {"msg": "A solid wall.", "block": True},
         "S": {"msg": "You begin to travel to another floor.", "teleport": True},
         "$": {"msg": "", "shop": True},
-        "E": {}
+        "E": {"event": True,"consume": "."},
     }
 
 MONSTERS = {
@@ -217,18 +217,29 @@ ITEMS = {
             "stats": {"accuracy": 5, "vigor": 2},
         },
 }
-NPC_EVENTS = {
-    (2, 5, 5): { # The coordinates of the NPC
-        "name": "The Hermit",
-        "dialogue": [
-            "You look... unsettled, {name}.",
-            "I have a draught that clears the mind, but it is bitter.",
-            "Will you drink, or do you prefer your madness?"
-        ],
-        "choices": {
-            "1": "Drink the Draught (-10 Gold, +20 Sanity)",
-            "2": "Refuse (Nothing happens)",
-            "3": "Rob the Old Man (+50 Gold, +30 Madness)"
+DIALOGUE_NODES = {
+    (2,1,3): {
+        "speaker": "Guard Captain",
+        "text": "Halt! Who goes there?",
+        "options": {
+            "1": {"text": "I am a friend.", "next_node": "friendly_path"},
+            "2": {"text": "[Persuade] I'm on official business.",
+                  "skill_required": "charisma", "difficulty": 12,
+                  "success_node": "inside", "failure_node": "prison"}
         }
-    }
+    },
+    "friendly_path": { "text": "Oh, my apologies! Come in.", "options": {"1": {"text": "Thanks", "next_node": "end"}}},
+    "inside": { "text": "Right this way, official.", "options": {"1": {"text": "Proceed", "next_node": "end"}}},
+    "prison": { "text": "I don't believe you. Guards!", "options": {"1": {"text": "Oh no...", "next_node": "end"}}}
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -7,7 +7,7 @@ import items
 
 # engine.py
 
-def msg(*lines, style="standard", pause_msg=True):
+def msg(*lines, style="standard", pause_msg=True, draw=False):
     # ... (your styles logic) ...
     styles = {
         "standard": ("-", "|"),
@@ -16,7 +16,8 @@ def msg(*lines, style="standard", pause_msg=True):
         "error": ("!", "X"),
         "death": ("X", "X"),
         "skill": ("%", "&"),
-        "shop": ("%", "$")
+        "shop": ("%", "$"),
+        "event": ("~", ":")
     }
     border_char, side_char = styles.get(style, ("-", "|"))
 
@@ -25,6 +26,9 @@ def msg(*lines, style="standard", pause_msg=True):
         chunk = lines[i: i + 3]
 
         # 1. THE REDRAW STEP
+        if draw:
+            draw_stats()
+            draw_exploration_screen()
         # If we have the data, we can draw the world before the text
 
         # 2. DRAW THE DIALOGUE BOX
@@ -104,21 +108,22 @@ def clear_screen():
 def pause():
     input(">...")
 
-def update_visibility(fog_map, current_level, radius=1):
-    w = current_level['width']
-    h = current_level['height']
-    grid = current_level['map']
+def update_visibility(radius=1):
+    fog_map = data.GAME_STATE['fog_map']
+    m_grid = data.visited_levels[data.GAME_STATE['current_map']]
+    w = len(m_grid[0]) if len(m_grid) > 0 else 0
+    h = len(m_grid)
     px, py = data.GAME_STATE['x'], data.GAME_STATE['y']
 
     for dy in range(-radius, radius + 1):
         for dx in range(-radius, radius + 1):
             rx, ry = px + dx, py + dy
             if 0 <= rx < w and 0 <= ry < h:
-                fog_map[ry][rx] = grid[ry][rx]
+                fog_map[ry][rx] = m_grid[ry][rx]
     return fog_map
 
 
-def get_viewport(view, radius=2):
+def get_viewport(view, radius=4):
     # 'view' should be a list of lists (the grid) for this to work best
     height = len(view)
     width = len(view[0]) if height > 0 else 0
@@ -136,8 +141,8 @@ def get_viewport(view, radius=2):
             viewport.append("".join(sliced_row))
     return viewport
 
-def move_monsters(current_level, view_radius=3):
-    monsters = current_level['monsters']
+def move_monsters(view_radius=3):
+    monsters = data.DUNGEON[data.GAME_STATE['current_map']]['monsters']
 
     for m in monsters:
         player_x = data.GAME_STATE['x']
@@ -178,7 +183,8 @@ def place_entities(temp_view, monsters):
             if temp_view[my][mx] != " ":
                 temp_view[my][mx] = m['marker']
 
-def check_for_combat(monsters):
+def check_for_combat():
+    monsters = data.DUNGEON[data.GAME_STATE['current_map']]['monsters']
     for monster in monsters:
         if monster['x'] == data.GAME_STATE['x'] and monster['y'] == data.GAME_STATE['y']:
             return monster # Return the monster we bumped into
@@ -333,9 +339,10 @@ def draw_stats():
     print(f"{color}HP: {data.PLAYER['hp']}{reset} | {color_san}SN:{sanity_bar()}{reset} | GP:{data.PLAYER['gp']}  \nMap:{data.GAME_STATE['current_map']} | Pos:{data.GAME_STATE['x'], data.GAME_STATE['y']}")
     print("~" * 40)
 
-def draw_exploration_screen(current_level, fog_map):
-    update_visibility(fog_map, current_level)
-    m = current_level['monsters']
+def draw_exploration_screen():
+    fog_map = data.GAME_STATE['fog_map']
+    update_visibility()
+    m = data.DUNGEON[data.GAME_STATE['current_map']]['monsters']
     # 2. Create a temporary copy of the fog to draw entities on
     temp_view = [list(row) for row in fog_map]
 
@@ -363,11 +370,10 @@ def load_level(level_id):
     return copy.deepcopy(data.DUNGEON[level_id])
 
 
-def check_tile_event(new_pos,current_level):
-    # 1. Use the data from current_level
+def check_tile_event(new_pos):
     g = data.GAME_STATE
     p = data.PLAYER
-    current_map = current_level['map']
+    current_map = data.visited_levels[data.GAME_STATE['current_map']]
     nx, ny = new_pos[0], new_pos[1]
     tile = current_map[ny][nx]
     next_state = "EXPLORE"
@@ -401,6 +407,9 @@ def check_tile_event(new_pos,current_level):
         if "consume" in effect:
             current_map[ny][nx] = effect['consume']
 
+        if "event" in effect:
+            next_state = 'EVENT'
+
         if "teleport" in effect:
             cords = (ny, nx)
             # Grab all the secret data from the CURRENT map before changing anything
@@ -411,7 +420,7 @@ def check_tile_event(new_pos,current_level):
             g['x'] = stair_data['target_x']
             g['y'] = stair_data['target_y']
             if "msg" in effect:
-                msg(effect['msg'])
+                msg(effect['msg'], pause_msg=False)
             return next_state
 
     return next_state
@@ -675,6 +684,7 @@ def show_stats_screen():
 
             #TODO make a skilltree
             #TODO make a crafting system
+            #TODO make an event system
 
 
 
@@ -1017,3 +1027,54 @@ def skill_check(skill_name, number):
     p = data.PLAYER['stats'][skill_name]
     modifier = random.randint(1, 20)
     return p + modifier >= number
+
+
+def run_dialogue():
+    # We start at the beginning of the path
+    m = data.GAME_STATE['current_map']
+    x = data.GAME_STATE['x']
+    y = data.GAME_STATE['y']
+    current_node_id = (m, x, y)
+    print(current_node_id)
+    pause()
+
+    # Continue until we hit a node that says 'end'
+    while current_node_id != "end":
+        node = data.DIALOGUE_NODES[current_node_id]
+
+        # 1. Show the NPC's text
+        # 1. Prepare the initial header
+        name = node.get("speaker", "NPC")
+
+        # 1. Create a list starting with the speaker and their text
+        lines = [f"{name}: {node['text']}"]
+
+        # 2. Extend that list with all the formatted options
+        lines.extend([f"{key}: {choice['text']}" for key, choice in node["options"].items()])
+
+        # 3. Unpack the list into the function call using '*'
+        msg(*lines, style="event", pause_msg=False, draw=True)
+
+        # 3. Get input
+        player_input = input(">...")
+
+        if player_input in node["options"]:
+            selected_choice = node["options"][player_input]
+
+            # 4. Check for a skill check before moving to the next node
+            if "skill_required" in selected_choice:
+                skill = selected_choice["skill_required"]
+                difficulty = selected_choice["difficulty"]
+
+                if skill_check(skill, difficulty):
+                    print("Success!")
+                    current_node_id = selected_choice["success_node"]
+                else:
+                    print("Failure!")
+                    current_node_id = selected_choice["failure_node"]
+            else:
+                # No skill check, just move to the next part of the story
+                current_node_id = selected_choice["next_node"]
+        else:
+            msg("Invalid choice, try again.", style="error")
+    return "EXPLORE"

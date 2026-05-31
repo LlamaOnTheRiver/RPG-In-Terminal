@@ -8,23 +8,26 @@ def main():
 
     # 1. Initialization
     game_state = "EXPLORE"
-    last_map_id = data.GAME_STATE['current_map']
-    active_enemy = None
+    # 1. Get the map data
+    m_grid = data.DUNGEON[1]['map']
 
-    # Load the initial level
-    current_level = engine.get_level_data(last_map_id)
+    # 2. Identify the current map
+    last_map_id = 1
+    data.GAME_STATE['current_map'] = last_map_id
 
-    # Create the local fog map
-    #data.PLAYER['name'] = input("Please enter your name: ")
-    data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
-               for _ in range(current_level["height"])]
+    # 3. CRITICAL: Store it in visited_levels so other functions can find it!
+    data.visited_levels[last_map_id] = m_grid
+
+    # 4. Now calculate dimensions and create fog
+    w = len(m_grid[0]) if len(m_grid) > 0 else 0
+    h = len(m_grid)
+    data.GAME_STATE['fog_map'] = [[" " for _ in range(w)] for _ in range(h)]
 
     while True:
         if game_state == "EXPLORE":
 
             # 2. Draw the Screen
-            fog_map = data.GAME_STATE['fog_map']
-            engine.draw_exploration_screen(current_level, fog_map)
+            engine.draw_exploration_screen()
 
             # 4. Input
             dx, dy = engine.move_player()
@@ -44,14 +47,13 @@ def main():
             # Check if move is possible
             if engine.is_passable(new_pos):
                 # Move Player & Process Tile (like stairs)
-                game_state = engine.check_tile_event(new_pos, current_level)
+                game_state = engine.check_tile_event(new_pos)
                 if game_state != "EXPLORE":
                     continue
 
                 # Check if stairs changed the map ID
                 if data.GAME_STATE["current_map"] != last_map_id:
                     last_map_id = data.GAME_STATE["current_map"]
-                    print(last_map_id)
                     engine.pause()
                     current_level = engine.get_level_data(last_map_id)
                     # Reset fog for new map size
@@ -60,10 +62,10 @@ def main():
                     continue  # Re-draw immediately on the new map
 
                 # Move Monsters
-                engine.move_monsters(current_level)
+                engine.move_monsters()
 
                 # Check for Combat
-                active_enemy = engine.check_for_combat(current_level["monsters"])
+                active_enemy = engine.check_for_combat()
                 if active_enemy:
                     game_state = "BATTLE"
             else:
@@ -102,9 +104,9 @@ def main():
             elif death_check() == "sanity":
                 break
         elif game_state == "BATTLE":
-            #game_state = "EXPLORE"
-            #continue
-            game_state = engine.battle(active_enemy, current_level)
+            game_state = "EXPLORE"
+            continue
+            #game_state = engine.battle(active_enemy, current_level)
 
         elif game_state == "INVENTORY":
             game_state = engine.show_inventory()
@@ -114,6 +116,10 @@ def main():
 
         elif game_state == "SHOP":
             game_state = engine.show_shop_screen(data.GAME_STATE['current_map'])
+
+        elif game_state == "EVENT":
+            game_state = engine.run_dialogue()
+
 
 
 if __name__ == "__main__":
