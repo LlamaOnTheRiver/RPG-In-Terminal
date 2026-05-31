@@ -4,8 +4,6 @@ from engine import clear_screen, death_check
 
 
 def main():
-    engine.clear_screen()
-
     # 1. Initialization
     game_state = "EXPLORE"
     # 1. Get the map data
@@ -22,6 +20,22 @@ def main():
     w = len(m_grid[0]) if len(m_grid) > 0 else 0
     h = len(m_grid)
     data.GAME_STATE['fog_map'] = [[" " for _ in range(w)] for _ in range(h)]
+
+    engine.clear_screen()
+    '''
+    engine.msg("...", style="event", draw=True)
+    engine.msg("Neil", style="event", draw=True)
+    engine.msg("...", style="event", draw=True)
+    engine.msg("Why am I?...", style="event", draw=True)
+    engine.msg("Why did you?...", style="event", draw=True)
+    engine.msg("You wake up in a haze and look at your surroundings.",
+               "Filth and dust line the walls of this ancient place.",
+               "You hold your chest as you brace your knee and stand yourself up.",
+               "How long has it been since the last time you've seen the moon?", draw=True)
+    engine.msg("I'm heading for you...", "Brother...", style="event", draw=True)
+    print("What is your name?")
+    data.PLAYER['name'] = input(">...")
+    '''
 
     while True:
         if game_state == "EXPLORE":

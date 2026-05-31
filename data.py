@@ -218,21 +218,40 @@ ITEMS = {
         },
 }
 DIALOGUE_NODES = {
-    (2,1,3): {
-        "speaker": "Guard Captain",
-        "text": "Halt! Who goes there?",
+    #Physical Triggers
+    (2, 1, 3): {
+        "speaker": "Cracked Wall",
+        "text": ["The wall looks cracked, it has been degrading here over centuries.",
+        "You feel a slight breeze coming from the other side."],
         "options": {
-            "1": {"text": "I am a friend.", "next_node": "friendly_path"},
-            "2": {"text": "[Persuade] I'm on official business.",
-                  "skill_required": "charisma", "difficulty": 12,
-                  "success_node": "inside", "failure_node": "prison"}
-        }
-    },
-    "friendly_path": { "text": "Oh, my apologies! Come in.", "options": {"1": {"text": "Thanks", "next_node": "end"}}},
-    "inside": { "text": "Right this way, official.", "options": {"1": {"text": "Proceed", "next_node": "end"}}},
-    "prison": { "text": "I don't believe you. Guards!", "options": {"1": {"text": "Oh no...", "next_node": "end"}}}
-}
+            "1": {
+                "text": "[Dread] Bash the wall in with your head.",
+                "skill_required": "dread",
+                "difficulty": 12,
+                "success_node": "m2:cracked_wall:busted",
+                "failure_node": "m2:cracked_wall:hurt"
+            },
+            "2": {
+                "text": "[Instinct] Look for the weakest point and use your shoulder to bust in",
+                "skill_required": "instinct",
+                "difficulty": 12,
+                "success_node": "m2:cracked_wall:busted",
+                "failure_node": "m2:cracked_wall:hurt"
+            },
+        },
+        },
 
+        # The Story Branches
+        "m2:cracked_wall:busted": {
+            "text": ["Success! You've opened a new path."],
+            "options": {"1": {"text": "Continue", "next_node": "end"}}
+        },
+
+        "m2:cracked_wall:hurt": {
+            "text": ["The wall is harder than your skull."],
+            "options": {"1": {"text": "Regret everything", "next_node": "end"}}
+    },
+}
 
 
 

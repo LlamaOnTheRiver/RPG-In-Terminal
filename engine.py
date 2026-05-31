@@ -17,7 +17,7 @@ def msg(*lines, style="standard", pause_msg=True, draw=False):
         "death": ("X", "X"),
         "skill": ("%", "&"),
         "shop": ("%", "$"),
-        "event": ("~", ":")
+        "event": ("~", "*")
     }
     border_char, side_char = styles.get(style, ("-", "|"))
 
@@ -1035,27 +1035,36 @@ def run_dialogue():
     x = data.GAME_STATE['x']
     y = data.GAME_STATE['y']
     current_node_id = (m, x, y)
-    print(current_node_id)
-    pause()
 
-    # Continue until we hit a node that says 'end'
     while current_node_id != "end":
         node = data.DIALOGUE_NODES[current_node_id]
+        name = node.get("speaker", "")
+        node_text = node['text']
 
-        # 1. Show the NPC's text
-        # 1. Prepare the initial header
-        name = node.get("speaker", "NPC")
+        if not node:
+            msg(f"Error: No dialogue found for {current_node_id}", style="error")
+            break
 
-        # 1. Create a list starting with the speaker and their text
-        lines = [f"{name}: {node['text']}"]
+        # Start your list
+        lines = []
 
-        # 2. Extend that list with all the formatted options
+        # Add the name header
+        if name:
+            lines.append(f"--- {name} ---")
+
+        # Add every string from the text list as its own entry
+        if isinstance(node_text, list):
+            lines.extend(node_text)
+        else:
+            lines.append(node_text)
+
+        # Add a spacer and then the choices
+        #lines.append("")
         lines.extend([f"{key}: {choice['text']}" for key, choice in node["options"].items()])
 
-        # 3. Unpack the list into the function call using '*'
-        msg(*lines, style="event", pause_msg=False, draw=True)
+        # Unpack into msg
+        msg(*lines, style="event", draw=True)
 
-        # 3. Get input
         player_input = input(">...")
 
         if player_input in node["options"]:
@@ -1066,15 +1075,33 @@ def run_dialogue():
                 skill = selected_choice["skill_required"]
                 difficulty = selected_choice["difficulty"]
 
+
+
                 if skill_check(skill, difficulty):
-                    print("Success!")
+                    msg("Success!", style="skill")
+
                     current_node_id = selected_choice["success_node"]
                 else:
-                    print("Failure!")
+                    msg("Failure!", style="skill")
                     current_node_id = selected_choice["failure_node"]
             else:
                 # No skill check, just move to the next part of the story
                 current_node_id = selected_choice["next_node"]
+
+            if "effect" in selected_choice:
+                eff = selected_choice["effect"]
+
+                # Update HP (and ensure it doesn't exceed max)
+                if "hp" in eff:
+                    data.PLAYER['hp'] = min(data.PLAYER['max_hp'], data.PLAYER['hp'] + eff['hp'])
+
+                # Update Gold or XP
+                if "gp" in eff:
+                    data.PLAYER['gp'] += eff['gp']
+                if "xp" in eff:
+                    data.PLAYER['xp'] += eff['xp']
         else:
             msg("Invalid choice, try again.", style="error")
     return "EXPLORE"
+
+
