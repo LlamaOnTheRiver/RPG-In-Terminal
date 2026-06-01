@@ -41,7 +41,7 @@ PLAYER = {
 GAME_STATE = {
         "x": 1,
         "y": 1,
-        "current_map": 1,
+        "current_map": 2,
         "marker": "\033[94mP\033[0m",
         "fog_map": []
 
@@ -71,17 +71,17 @@ DUNGEON = {
 
     2: {
         "map": [
-            ["E",".",".",".","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-            [".",".",".",".","W",".",".",".",".",".",".",".",".",".","W",".",".",".",".",".","."],
+            ["E",".",".","G","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
+            [".",".",".","G","W",".",".",".",".",".",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","W","W","W",".","W","W","W","W","W","W","W",".",".",".",".",".","."],
             ["W","E","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".",".",".",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".",".",".",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W","W","W","W","W","W","W"],
-            [".",".",".","W",".","W","W","W","W","W",".","W",".",".",".",".",".",".",".",".","."],
-            [".",".",".","W",".",".",".",".",".","W",".","W",".",".",".",".",".",".",".",".","."],
-            [".",".",".","W",".",".",".",".",".","W",".","W","W","W","W","W","W","W","W","W","."],
-            [".",".",".","W",".",".",".",".",".","W",".",".",".",".",".",".","W",".",".",".","."],
+            [".",".",".","W","T","W","W","W","W","W",".","W",".",".",".",".",".",".",".",".","."],
+            [".",".",".","W","E",".",".","W","E","W",".","W",".",".",".",".",".",".",".",".","."],
+            ["T",".",".","W",".",".",".","W",".","W",".","W","W","W","W","W","W","W","W","W","."],
+            ["G","T",".","W",".",".",".",".",".","W",".",".",".",".",".",".","W",".",".",".","."],
         ],
         "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
                   },
@@ -219,6 +219,12 @@ ITEMS = {
             "slot": "Helmet",
             "stats": {"accuracy": 5, "vigor": 2},
         },
+    "Crooked Blade": {
+                "value": 50,
+                "type": "equipment",
+                "slot": "Sword",
+                "stats": {"atk": 3},
+            },
 }
 
 
@@ -244,7 +250,7 @@ DIALOGUE_NODES = {
             },
         },
         },
-    #Physical Triggers
+    #///Physical Triggers///
     (2, 1, 3): {
         "speaker": "Cracked Wall",
         "text": ["The wall looks cracked, it has been degrading here over centuries.",
@@ -293,7 +299,57 @@ DIALOGUE_NODES = {
             },
     },
 
-        # The Story Branches
+    (2, 4, 8): {
+            "text": ["The room looks crude. Grime lines the walls.",
+                     "Makeshift crooked cupboards cover a portion of",
+                     "the wall. It appears to be made out of bone and",
+                     "some type of sinew holding everything together.",
+                     "Utensils are scattered over the countertops.",
+                     "You hear a noise coming from the corner of the",
+                     "room. It sounds like a small creature is in",
+                     "pain. The heavy labored breathing and pungent",
+                     "stench that wafts through the room seems to say",
+                     "the creature is near death."],
+            "next_node": "end",
+            },
+
+    (2, 8, 8): {
+            "speaker": "Goblin",
+            "text": ["As you draw near you can see the shelves held up by bones",
+                     "in this small room. On the shelves are a number of jars",
+                     "with different concoctions of body parts. There are strange",
+                     "spices in the air. That are all repugnant. in the corner",
+                     "there lies a small goblin, wounded it's thick ichor is",
+                     "draining from the crude knife that's stuck in its stomach.",
+                     "It looks up at you, sensing that you are the predator and",
+                     "it is the prey. It wallows its final cry, defeated. 'Ick rak",
+                     "grald nkree.' its hand shakes as it goes for the knife stuck",
+                     "in its belly, about to finish the job."],
+            "options": {
+                "1": {
+                    "text": "[Instinct] Stop the goblin from killing itself.",
+                    "skill_required": "instinct",
+                    "difficulty": 12,
+                    "success_node": "m2:goblin:alive",
+                    "failure_node": "m2:goblin:dead",
+                },
+                "2": {
+                    "text": "You are the preditor. Take the knife and finish the job.",
+                    "next_node": "m2:goblin:dead",
+                    "effect":{"inventory": "Crooked Blade" },
+                },
+            },
+            },
+
+
+        #///The Story Branches///
+        "master": {
+            "speaker": "",
+            "text": [""],
+            "options": {"1": {"text": "Continue", "next_node": "end"}},
+            "effect": {"inventory": "" },
+            "next_node": "end",
+        },
         "m2:cracked_wall:busted": {
             "speaker": "Cracked Wall",
             "text": ["The wall crumbles away and a new path lies before you."],
@@ -310,24 +366,51 @@ DIALOGUE_NODES = {
         },
 
         "m2:chest:treasure": {
-                    "speaker": "Chest",
-                    "text": ["Your greed pays off. You snatch the gold and potions before the chest can shut on you.",
-                             "The chest shuts tight, never to be opened again."],
-                    "next_node": "end",
-                    "effect": {"gp": random.randint(25, 75), "inventory": "Small Health Potion", "sanity": -10},
+            "speaker": "Chest",
+            "text": ["Your greed pays off. You snatch the gold and potions before the chest can shut on you.",
+                     "The chest shuts tight, never to be opened again."],
+            "next_node": "end",
+            "effect": {"gp": random.randint(25, 75), "inventory": "Small Health Potion", "sanity": -10},
         },
 
         "m2:chest:sanity": {
-                    "speaker": "Chest",
-                    "text": ["You try and dart your hand into the chest. Too late.",
-                             "The chest shuts tight, your arm still in it.",
-                             "You writhe in pain as you manage to pull your",
-                             "arm out. The chest is locked with your blood",
-                             "staining the gold, never to be seen again.",
-                             "You stand back in horror and walk away from"
-                             "the chest."],
-                    "next_node": "end",
-                    "effect": {"hp": -10, "sanity": -15}
+            "speaker": "Chest",
+            "text": ["You try and dart your hand into the chest. Too late.",
+                     "The chest shuts tight, your arm still in it.",
+                     "You writhe in pain as you manage to pull your",
+                     "arm out. The chest is locked with your blood",
+                     "staining the gold, never to be seen again.",
+                     "You stand back in horror and walk away from"
+                     "the chest."],
+            "next_node": "end",
+            "effect": {"hp": -10, "sanity": -15}
+        },
+        "m2:goblin:alive": {
+            "speaker": "Goblin",
+            "text": [""],
+            "options": {
+                "1": {
+                    "text": "Continue",
+                    "next_node": "end"
+                },
+                "2": {
+                    "text": "[Bread] give the goblin a loaf of bread",
+                    "item_required": {"Bread": 1},
+                    "next_node": "end"
+
+                }
+            },
+            "effect": {"sanity": 20,"inventory": "" },
+        },
+        "m2:goblin:dead": {
+            "speaker": "Goblin",
+            "text": ["The goblin groans in pain.",
+                     "It lets out its final cry",
+                     "and then it is listless on",
+                     "the floor. You walk away",
+                     "with nothing more to do"],
+            "options": {"1": {"text": "Continue", "next_node": "end"}},
+            "effect": {"sanity": -10, "inventory": "" },
         },
 }
 

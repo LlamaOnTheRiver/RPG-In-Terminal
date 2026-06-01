@@ -1,51 +1,17 @@
-import os
 import data
 import random
 import copy
 import items
+from utils import msg, pause, clear_screen
 
 
 # engine.py
 
-def msg(*lines, style="standard", pause_msg=True, draw=False):
-    # ... (your styles logic) ...
-    styles = {
-        "standard": ("-", "|"),
-        "combat": ("*", "!"),
-        "loot": ("=", "$"),
-        "error": ("!", "X"),
-        "death": ("X", "X"),
-        "skill": ("%", "&"),
-        "shop": ("%", "$"),
-        "event": ("~", "*")
-    }
-    border_char, side_char = styles.get(style, ("-", "|"))
+def redraw():
+    draw_stats()
+    draw_exploration_screen()
 
 
-    for i in range(0, len(lines), 4):
-        chunk = lines[i: i + 4]
-
-        # 1. THE REDRAW STEP
-        if draw:
-            draw_stats()
-            draw_exploration_screen()
-        # If we have the data, we can draw the world before the text
-
-        # 2. DRAW THE DIALOGUE BOX
-        width = max(len(str(line)) for line in chunk)
-        print(border_char * (width + 4))
-        for line in chunk:
-            print(f"{side_char} {str(line).ljust(width)} {side_char}")
-        print(border_char * (width + 4))
-
-        # 3. PAUSE
-        if i + 3 < len(lines):
-            if pause_msg:
-                pause()
-                clear_screen()
-        else:
-            if pause_msg:
-                pause()
 
 
 def get_level_data(level_id): # I renamed last_map_id to level_id for clarity
@@ -97,16 +63,6 @@ def move_player():
     # If they hit a random key
     msg("Hero ponders about life")
     return 0, 0
-
-
-def clear_screen():
-    if os.name == 'nt':
-        os.system('cls')
-    else:
-        os.system('clear')
-
-def pause():
-    input(">...")
 
 def update_visibility(radius=1):
     fog_map = data.GAME_STATE['fog_map']
@@ -893,7 +849,7 @@ def get_current_stat(stat_name):
 def show_shop_screen(floor_id):
     page = 0
     items_per_page = 6
-    categories = ['all", "consume", "equipment", "material']
+    categories = ['all', 'consume', 'equipment', 'material']
     cat_idx = 0
     mode = "buy"  # buy or sell
 
@@ -1047,17 +1003,17 @@ def run_dialogue():
     y = data.GAME_STATE['y']
     current_node_id = (m, x, y)
     p = data.PLAYER
+    player_input = ""
 
     while current_node_id != "end":
         if death_check() == "death" or death_check() == "sanity":
             return "GAME OVER"
         node = data.DIALOGUE_NODES.get(current_node_id)
-        if "effect" in node:
-            apply_effect(node["effect"], p)
-
         if not node:
             msg(f"Error: No dialogue found for {current_node_id}", style="error")
             break
+        if "effect" in node:
+            apply_effect(node["effect"], p)
 
         # Start your list
         name = node.get("speaker", "")
@@ -1075,20 +1031,35 @@ def run_dialogue():
             lines.append(node_text)
 
         # Unpack into msg
-        msg(*lines, style="event", draw=True)
+        msg(*lines, style="event", draw_fn=redraw)
 
         # Show choices without a pause
         options = node.get("options", {})
+
         if options:
-            choice_lines = [f"{key}: {choice['text']}" for key, choice in options.items()]
-            msg(*choice_lines, style="event", draw=True, pause_msg=False)
+            dim = "\033[90m"
+            reset = "\033[0m"
+            choice_lines = []
+
+            for key, choice in options.items():
+                required = choice.get("item_required", {})
+                inventory = p.get("inventory", {})
+                can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
+
+                if required and not can_use:
+                    choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}")
+                else:
+                    choice_lines.append(f"{key}: {choice['text']}")
+
+            msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
             player_input = input(">...")
-            # ... handle player input
+
         elif "next_node" in node:
             pause()
             current_node_id = node["next_node"]
         else:
             break
+
 
         if player_input in options:
             selected_choice = options[player_input]
