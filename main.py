@@ -39,6 +39,9 @@ def main():
 
     while True:
         if game_state == "EXPLORE":
+            if engine.death_check() == "death" or engine.death_check() == "sanity":
+                game_state = "GAME OVER"
+                continue
 
             # 2. Draw the Screen
             engine.draw_exploration_screen()

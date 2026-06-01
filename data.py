@@ -244,12 +244,14 @@ DIALOGUE_NODES = {
         # The Story Branches
         "m2:cracked_wall:busted": {
             "text": ["Success! You've opened a new path."],
-            "options": {"1": {"text": "Continue", "next_node": "end"}}
+            "options": {"1": {"text": "Continue", "next_node": "end"}},
+            "effect": {"gp":200,"hp": -50}
         },
 
         "m2:cracked_wall:hurt": {
             "text": ["The wall is harder than your skull."],
-            "options": {"1": {"text": "Regret everything", "next_node": "end"}}
+            "options": {"1": {"text": "Regret everything", "next_node": "end"}},
+            "effect": {"gp":100}
     },
 }
 

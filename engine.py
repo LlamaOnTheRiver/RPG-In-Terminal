@@ -22,8 +22,8 @@ def msg(*lines, style="standard", pause_msg=True, draw=False):
     border_char, side_char = styles.get(style, ("-", "|"))
 
 
-    for i in range(0, len(lines), 3):
-        chunk = lines[i: i + 3]
+    for i in range(0, len(lines), 4):
+        chunk = lines[i: i + 4]
 
         # 1. THE REDRAW STEP
         if draw:
@@ -1035,8 +1035,11 @@ def run_dialogue():
     x = data.GAME_STATE['x']
     y = data.GAME_STATE['y']
     current_node_id = (m, x, y)
+    p = data.PLAYER
 
     while current_node_id != "end":
+        if death_check() == "death" or death_check() == "sanity":
+            return "GAME OVER"
         node = data.DIALOGUE_NODES[current_node_id]
         name = node.get("speaker", "")
         node_text = node['text']
@@ -1058,17 +1061,25 @@ def run_dialogue():
         else:
             lines.append(node_text)
 
-        # Add a spacer and then the choices
-        #lines.append("")
-        lines.extend([f"{key}: {choice['text']}" for key, choice in node["options"].items()])
-
         # Unpack into msg
         msg(*lines, style="event", draw=True)
+
+        # Show choices without a pause
+        choice_lines = [f"{key}: {choice['text']}" for key, choice in node["options"].items()]
+        msg(*choice_lines, style="event", draw=True, pause_msg=False)
 
         player_input = input(">...")
 
         if player_input in node["options"]:
             selected_choice = node["options"][player_input]
+
+            if "effect" in node:
+                eff = node["effect"]
+                # Update HP (and ensure it doesn't exceed max)
+                # Update Gold or XP
+                p['hp'] = min(p['max_hp'], p['hp'] + eff.get("hp", 0))
+                p['gp'] += eff.get("gp", 0)
+                p['xp'] += eff.get("xp", 0)
 
             # 4. Check for a skill check before moving to the next node
             if "skill_required" in selected_choice:
@@ -1088,18 +1099,6 @@ def run_dialogue():
                 # No skill check, just move to the next part of the story
                 current_node_id = selected_choice["next_node"]
 
-            if "effect" in selected_choice:
-                eff = selected_choice["effect"]
-
-                # Update HP (and ensure it doesn't exceed max)
-                if "hp" in eff:
-                    data.PLAYER['hp'] = min(data.PLAYER['max_hp'], data.PLAYER['hp'] + eff['hp'])
-
-                # Update Gold or XP
-                if "gp" in eff:
-                    data.PLAYER['gp'] += eff['gp']
-                if "xp" in eff:
-                    data.PLAYER['xp'] += eff['xp']
         else:
             msg("Invalid choice, try again.", style="error")
     return "EXPLORE"
