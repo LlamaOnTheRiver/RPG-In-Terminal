@@ -1,6 +1,5 @@
 import engine
 import data
-from engine import clear_screen, death_check
 
 
 def main():
@@ -118,12 +117,12 @@ def main():
                 engine.msg("Your time has not yet come warrior,","on your feet.", style='death')
                 game_state = "EXPLORE"
                 continue
-            elif death_check() == "sanity":
+            elif engine.death_check() == "sanity":
                 break
         elif game_state == "BATTLE":
             game_state = "EXPLORE"
             continue
-            #game_state = engine.battle(active_enemy, current_level)
+            #game_state = engine.battle(active_enemy)
 
         elif game_state == "INVENTORY":
             game_state = engine.show_inventory()

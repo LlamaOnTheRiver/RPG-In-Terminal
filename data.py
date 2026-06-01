@@ -1,3 +1,6 @@
+import random
+
+
 PLAYER = {
         "name": "Hero",
         "hp": 50,
@@ -68,7 +71,7 @@ DUNGEON = {
 
     2: {
         "map": [
-            [".",".",".",".","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
+            ["E",".",".",".","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
             [".",".",".",".","W",".",".",".",".",".",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","W","W","W",".","W","W","W","W","W","W","W",".",".",".",".",".","."],
             ["W","E","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
@@ -217,7 +220,30 @@ ITEMS = {
             "stats": {"accuracy": 5, "vigor": 2},
         },
 }
+
+
 DIALOGUE_NODES = {
+
+    (0, 0, 0): {
+        "speaker": "Master Copy",
+        "text": [""],
+        "options": {
+            "1": {
+                "text": "[Dread]",
+                "skill_required": "",
+                "difficulty": 0,
+                "success_node": "",
+                "failure_node": ""
+            },
+            "2": {
+                "text": "[Instinct]",
+                "skill_required": "",
+                "difficulty": 0,
+                "success_node": "",
+                "failure_node": ""
+            },
+        },
+        },
     #Physical Triggers
     (2, 1, 3): {
         "speaker": "Cracked Wall",
@@ -240,19 +266,69 @@ DIALOGUE_NODES = {
             },
         },
         },
+    (2, 0, 0): {
+            "speaker": "Chest",
+            "text": ["You see a chest full of gold and potions.",
+                     "Your eyes grow big as you decide to take the whole stash",
+                     "You see an old note stuck to the top of the lid",
+                     "Choose One: Take a potion or gold"],
+            "options": {
+                "1": {
+                    "text": "You take some of the gold and obey the solemn note",
+                    "effect":{"gp": random.randint(25, 75)},
+                    "next_node": "end",
+                },
+                "2": {
+                    "text": "Gold is worthless to you. You take a potion and close the chest lid.",
+                    "effect":{"inventory": "Small Health Potion" },
+                    "next_node": "end",
+                },
+                "3": {
+                    "text": "[Cunning]You take the note crumple it up and eat it. All the treasure is yours!",
+                    "skill_required": "cunning",
+                    "difficulty": 20,
+                    "success_node": "m2:chest:treasure",
+                    "failure_node": "m2:chest:sanity"
+                },
+            },
+    },
 
         # The Story Branches
         "m2:cracked_wall:busted": {
-            "text": ["Success! You've opened a new path."],
+            "speaker": "Cracked Wall",
+            "text": ["The wall crumbles away and a new path lies before you."],
             "options": {"1": {"text": "Continue", "next_node": "end"}},
-            "effect": {"gp":200,"hp": -50}
         },
 
         "m2:cracked_wall:hurt": {
-            "text": ["The wall is harder than your skull."],
+            "speaker": "Cracked Wall",
+            "text": ["You decided to bash in the wall with your skull.",
+                     "Your head rings in protest as the wall crumbles away.",
+                     "You feel your health drain."],
             "options": {"1": {"text": "Regret everything", "next_node": "end"}},
-            "effect": {"gp":100}
-    },
+            "effect": {"hp": -10},
+        },
+
+        "m2:chest:treasure": {
+                    "speaker": "Chest",
+                    "text": ["Your greed pays off. You snatch the gold and potions before the chest can shut on you.",
+                             "The chest shuts tight, never to be opened again."],
+                    "next_node": "end",
+                    "effect": {"gp": random.randint(25, 75), "inventory": "Small Health Potion", "sanity": -10},
+        },
+
+        "m2:chest:sanity": {
+                    "speaker": "Chest",
+                    "text": ["You try and dart your hand into the chest. Too late.",
+                             "The chest shuts tight, your arm still in it.",
+                             "You writhe in pain as you manage to pull your",
+                             "arm out. The chest is locked with your blood",
+                             "staining the gold, never to be seen again.",
+                             "You stand back in horror and walk away from"
+                             "the chest."],
+                    "next_node": "end",
+                    "effect": {"hp": -10, "sanity": -15}
+        },
 }
 
 

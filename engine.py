@@ -229,7 +229,8 @@ def is_passable(new_pos):
         return False
     return True
 
-def battle(active_enemy, current_level):
+def battle(active_enemy):
+    current_level = data.DUNGEON[data.GAME_STATE['current_map']]
     msg(f"A wild {active_enemy['name']} appeared!", style="combat")
     # Update player stats based on current level/points
     stats = get_derived_stats()
@@ -425,15 +426,15 @@ def check_tile_event(new_pos):
 
     return next_state
 
+
 def use_item(item_name):
-    # Check the registry in the items file
     if item_name in items.ITEM_REGISTRY:
         effect_function = items.ITEM_REGISTRY[item_name]
+        result = effect_function()
 
-        # Execute the function
-        effect_function()
+        if result and "msg" in result:
+            msg(result["msg"])
 
-        # Handle the inventory subtraction
         data.PLAYER['inventory'][item_name] -= 1
         if data.PLAYER['inventory'][item_name] <= 0:
             del data.PLAYER['inventory'][item_name]
@@ -446,7 +447,7 @@ def use_item(item_name):
 def show_inventory():
     page = 0
     items_per_page = 6
-    categories = ['all", "consume", "equipment", "quest']
+    categories = ['all', 'consume', 'equipment', 'quest']
     cat_idx = 0
 
     while True:
@@ -532,6 +533,7 @@ def xp_screen(enemy):
     if p['xp'] >= (p['level']) * p['xp_curve']:
         p['xp'] -= p['level'] * p['xp_curve']
         p['level'] += 1
+        p['hp'] = p['max_hp']
         xp_msg = f"Nice! You have now reached Level: {data.PLAYER['level']}!"
     msg(f"You have gained {xp} XP." ,f"and {gp} GP was added to your stash.", f"You also found a {loot}!", style="loot")
     if xp_msg:
@@ -1028,6 +1030,15 @@ def skill_check(skill_name, number):
     modifier = random.randint(1, 20)
     return p + modifier >= number
 
+def apply_effect(eff, p):
+    p['hp'] = min(p['max_hp'], p['hp'] + eff.get("hp", 0))
+    p['gp'] += eff.get("gp", 0)
+    p['xp'] += eff.get("xp", 0)
+    p['sanity'] += eff.get("sanity", 0)
+    item = eff.get("inventory")
+    if item:
+        p['inventory'][item] = p['inventory'].get(item, 0) + 1
+
 
 def run_dialogue():
     # We start at the beginning of the path
@@ -1040,15 +1051,17 @@ def run_dialogue():
     while current_node_id != "end":
         if death_check() == "death" or death_check() == "sanity":
             return "GAME OVER"
-        node = data.DIALOGUE_NODES[current_node_id]
-        name = node.get("speaker", "")
-        node_text = node['text']
+        node = data.DIALOGUE_NODES.get(current_node_id)
+        if "effect" in node:
+            apply_effect(node["effect"], p)
 
         if not node:
             msg(f"Error: No dialogue found for {current_node_id}", style="error")
             break
 
         # Start your list
+        name = node.get("speaker", "")
+        node_text = node['text']
         lines = []
 
         # Add the name header
@@ -1065,21 +1078,23 @@ def run_dialogue():
         msg(*lines, style="event", draw=True)
 
         # Show choices without a pause
-        choice_lines = [f"{key}: {choice['text']}" for key, choice in node["options"].items()]
-        msg(*choice_lines, style="event", draw=True, pause_msg=False)
+        options = node.get("options", {})
+        if options:
+            choice_lines = [f"{key}: {choice['text']}" for key, choice in options.items()]
+            msg(*choice_lines, style="event", draw=True, pause_msg=False)
+            player_input = input(">...")
+            # ... handle player input
+        elif "next_node" in node:
+            pause()
+            current_node_id = node["next_node"]
+        else:
+            break
 
-        player_input = input(">...")
+        if player_input in options:
+            selected_choice = options[player_input]
 
-        if player_input in node["options"]:
-            selected_choice = node["options"][player_input]
-
-            if "effect" in node:
-                eff = node["effect"]
-                # Update HP (and ensure it doesn't exceed max)
-                # Update Gold or XP
-                p['hp'] = min(p['max_hp'], p['hp'] + eff.get("hp", 0))
-                p['gp'] += eff.get("gp", 0)
-                p['xp'] += eff.get("xp", 0)
+            if "effect" in selected_choice:
+                apply_effect(selected_choice["effect"], p)
 
             # 4. Check for a skill check before moving to the next node
             if "skill_required" in selected_choice:
@@ -1099,8 +1114,6 @@ def run_dialogue():
                 # No skill check, just move to the next part of the story
                 current_node_id = selected_choice["next_node"]
 
-        else:
-            msg("Invalid choice, try again.", style="error")
     return "EXPLORE"
 
 
