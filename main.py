@@ -6,10 +6,10 @@ def main():
     # 1. Initialization
     game_state = "EXPLORE"
     # 1. Get the map data
-    m_grid = data.DUNGEON[1]['map']
+    m_grid = data.DUNGEON[2]['map']
 
     # 2. Identify the current map
-    last_map_id = 1
+    last_map_id = 2
     data.GAME_STATE['current_map'] = last_map_id
 
     # 3. CRITICAL: Store it in visited_levels so other functions can find it!

@@ -178,6 +178,10 @@ ITEMS = {
         "value": 50,
     },
 
+    #///Quest///
+    "Goblin Emblem":{
+        "type": "quest"
+    },
 
 
 
@@ -329,14 +333,14 @@ DIALOGUE_NODES = {
                 "1": {
                     "text": "[Instinct] Stop the goblin from killing itself.",
                     "skill_required": "instinct",
-                    "difficulty": 12,
+                    "difficulty": 1,
                     "success_node": "m2:goblin:alive",
                     "failure_node": "m2:goblin:dead",
                 },
                 "2": {
                     "text": "You are the preditor. Take the knife and finish the job.",
                     "next_node": "m2:goblin:dead",
-                    "effect":{"inventory": "Crooked Blade" },
+                    "effect":{"inventory": {"Crooked Blade": 1} },
                 },
             },
             },
@@ -370,7 +374,7 @@ DIALOGUE_NODES = {
             "text": ["Your greed pays off. You snatch the gold and potions before the chest can shut on you.",
                      "The chest shuts tight, never to be opened again."],
             "next_node": "end",
-            "effect": {"gp": random.randint(25, 75), "inventory": "Small Health Potion", "sanity": -10},
+            "effect": {"gp": random.randint(25, 75), "inventory": {"Small Health Potion" : 1}, "sanity": -10},
         },
 
         "m2:chest:sanity": {
@@ -387,20 +391,45 @@ DIALOGUE_NODES = {
         },
         "m2:goblin:alive": {
             "speaker": "Goblin",
-            "text": [""],
+            "text": ["You reach for the Goblins hand and smack it away.",
+                     "You say to the goblin. 'I am friend.' He seems to",
+                     "understand. 'Wait here a second. I'm going to find",
+                     "something to stop the bleeding.' He looks desperate.",
+                     "You go into the other room searching and scanning,",
+                     "until you see it there on the table. Crude empty",
+                     "bone plates and bowels are haphazardly scattered",
+                     "about. a small rugged candle is the centerpiece",
+                     "dimly lighting the room. The tablecloth drapes",
+                     "over. You grab the candle and place it aside for",
+                     "now. You take the tablecloth and yank it from out",
+                     "of it's place, throwing all the bowls and utensils",
+                     "all over the room. You head back to the goblin and",
+                     "find the cleanest part of the tablecloth and rip it",
+                     "apart to make strips. He looks confused. 'Brace yourself,",
+                     "this is going to hurt. You pull out the blade and quickly",
+                     "tie the cloth around his abdomen. He Howls out in pain",
+                     "and begins to claw around scratching you a couple times.",
+                     "You brace yourself and tie the cloth tight. After a few",
+                     "agonizing moments, the situation seems to calm down.",
+                     "He then reaches for the side of his loincloth and tears",
+                     "off a piece of it. He hands it to you. 'Huk zra nub gratz'",
+                     "You look at the cloth, an emblem of some kind. He repeats",
+                     "himself. 'Huk zra nub gratz.' 'Thank you friend, rest well.'",
+                     "Despite there being 'food' around in this pantry. You see",
+                     "That he's starving."],
             "options": {
                 "1": {
-                    "text": "Continue",
+                    "text": "You've done all you can. The rest is up to him.",
                     "next_node": "end"
                 },
                 "2": {
                     "text": "[Bread] give the goblin a loaf of bread",
                     "item_required": {"Bread": 1},
-                    "next_node": "end"
+                    "next_node": "m2:goblin:bread"
 
                 }
             },
-            "effect": {"sanity": 20,"inventory": "" },
+            "effect": {"sanity": 20,"inventory": {"Goblin Emblem": 1} },
         },
         "m2:goblin:dead": {
             "speaker": "Goblin",
@@ -410,8 +439,15 @@ DIALOGUE_NODES = {
                      "the floor. You walk away",
                      "with nothing more to do"],
             "options": {"1": {"text": "Continue", "next_node": "end"}},
-            "effect": {"sanity": -10, "inventory": "" },
+            "effect": {"sanity": -10},
         },
+        "m2:goblin:bread": {
+                    "speaker": "Goblin",
+                    "text": [""],
+                    "effect": {"inventory": {"Bread": -1} },
+                    "next_node": "end",
+        },
+
 }
 
 

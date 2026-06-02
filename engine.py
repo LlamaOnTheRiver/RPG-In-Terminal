@@ -990,10 +990,12 @@ def apply_effect(eff, p):
     p['hp'] = min(p['max_hp'], p['hp'] + eff.get("hp", 0))
     p['gp'] += eff.get("gp", 0)
     p['xp'] += eff.get("xp", 0)
-    p['sanity'] += eff.get("sanity", 0)
-    item = eff.get("inventory")
-    if item:
-        p['inventory'][item] = p['inventory'].get(item, 0) + 1
+    inventory_changes = eff.get("inventory")
+    if inventory_changes:
+        for item, qty in inventory_changes.items():
+            p["inventory"][item] = p["inventory"].get(item, 0) + qty
+            if p["inventory"][item] <= 0:
+                del p["inventory"][item]
 
 
 def run_dialogue():
@@ -1039,6 +1041,7 @@ def run_dialogue():
         if options:
             dim = "\033[90m"
             reset = "\033[0m"
+            border_color = "\033[34m"
             choice_lines = []
 
             for key, choice in options.items():
@@ -1047,7 +1050,7 @@ def run_dialogue():
                 can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
 
                 if required and not can_use:
-                    choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}")
+                    choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
                 else:
                     choice_lines.append(f"{key}: {choice['text']}")
 
@@ -1064,7 +1067,7 @@ def run_dialogue():
         if player_input in options:
             selected_choice = options[player_input]
 
-            if "effect" in selected_choice:
+            if "effect" in selected_choice and "item_required" not in selected_choice:
                 apply_effect(selected_choice["effect"], p)
 
             # 4. Check for a skill check before moving to the next node
