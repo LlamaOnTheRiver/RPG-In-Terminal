@@ -75,7 +75,31 @@ def update_visibility(radius=1):
         for dx in range(-radius, radius + 1):
             rx, ry = px + dx, py + dy
             if 0 <= rx < w and 0 <= ry < h:
-                fog_map[ry][rx] = m_grid[ry][rx]
+                actual_tile = m_grid[ry][rx]
+
+                if actual_tile == "T":
+                    roll = skill_check("cunning")  # A helper that returns the total (stat + d20)
+                    difficulty = 10
+
+                    if roll >= difficulty + 5:
+                        # Critical Success: Player spots AND disables the trap automatically
+                        m_grid[ry][rx] = "."
+                        fog_map[ry][rx] = "."
+                    elif roll >= difficulty:
+                        # Success: Player spots the trap
+                        m_grid[ry][rx] = "["
+                        fog_map[ry][rx] = "T"
+                    else:
+                        # Failure: Trap remains hidden
+                        m_grid[ry][rx] = "]"
+                        fog_map[ry][rx] = "."
+                elif actual_tile == "[":
+                    fog_map[ry][rx] = "T"  # Show spotted traps as T
+                elif actual_tile == "]":
+                    fog_map[ry][rx] = "."  # Show missed traps as floor
+                else:
+                    # This copies walls, gold, and normal floors
+                    fog_map[ry][rx] = actual_tile
     return fog_map
 
 
@@ -981,15 +1005,16 @@ def show_shop_screen(floor_id):
                         shop_stock[chosen_name] = 1
 
                     msg(f"Sold {chosen_name} for {sell_price} GP. The merchant adds it to their shelf.", style="shop")
-def skill_check(skill_name, number):
-    p = data.PLAYER['stats'][skill_name]
-    modifier = random.randint(1, 20)
-    return p + modifier >= number
+def skill_check(skill_name):
+    p_stat = data.PLAYER['stats'][skill_name]
+    die_roll = random.randint(1, 20)
+    return p_stat + die_roll
 
 def apply_effect(eff, p):
-    p['hp'] = min(p['max_hp'], p['hp'] + eff.get("hp", 0))
-    p['gp'] += eff.get("gp", 0)
+    p['hp'] = min(p['max_hp'], max(p['hp'] + eff.get("hp", 0), 0))
+    p['gp'] = max(p['gp'] + eff.get("gp", 0), 0)
     p['xp'] += eff.get("xp", 0)
+    p['sanity'] = min(p['max_sanity'], max(p['sanity'] + eff.get("sanity", 0), 0))
     inventory_changes = eff.get("inventory")
     if inventory_changes:
         for item, qty in inventory_changes.items():
@@ -1077,7 +1102,7 @@ def run_dialogue():
 
 
 
-                if skill_check(skill, difficulty):
+                if skill_check(skill) >= difficulty:
                     msg("Success!", style="skill")
 
                     current_node_id = selected_choice["success_node"]
