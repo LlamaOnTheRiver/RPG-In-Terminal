@@ -1,7 +1,6 @@
 import engine
 import data
 
-
 def main():
     # 1. Initialization
     game_state = "EXPLORE"
@@ -36,6 +35,7 @@ def main():
     print("What is your name?")
     data.PLAYER['name'] = input(">...")
     '''
+    engine.redraw()
 
 
     while True:
@@ -44,51 +44,39 @@ def main():
                 game_state = "GAME OVER"
                 continue
 
-            # 2. Draw the Screen
-            engine.draw_exploration_screen()
+            # 1. Get movement intent
+            result = engine.move_player()
+            if isinstance(result, tuple):
+                dx, dy = result
+                new_pos = (data.GAME_STATE['x'] + dx, data.GAME_STATE['y'] + dy)
 
-            # 4. Input
-            dx, dy = engine.move_player()
-            if dx == -10 and dy == -10: break # Quit
-            if dx == 10 and dy == 10:
-                game_state = "INVENTORY"
-                continue
-            if dx == 11 and dy == 11:
-                game_state = "STATS"
-                continue
-
-            # 5. Turn Logic (Only proceed if player moved)
-            if dx == 0 and dy == 0:
-                continue
-
-            new_pos = (data.GAME_STATE["x"] + dx, data.GAME_STATE["y"] + dy)
-            # Check if move is possible
-            if engine.is_passable(new_pos):
-                # Move Player & Process Tile (like stairs)
+                # 2. ONLY check the event for the NEW position
                 game_state = engine.check_tile_event(new_pos)
-                if game_state != "EXPLORE":
-                    continue
 
-                # Check if stairs changed the map ID
-                if data.GAME_STATE["current_map"] != last_map_id:
-                    last_map_id = data.GAME_STATE["current_map"]
-                    engine.pause()
-                    current_level = engine.get_level_data(last_map_id)
-                    # Reset fog for new map size
-                    data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
-                               for _ in range(current_level["height"])]
-                    continue  # Re-draw immediately on the new map
+                # 3. THEN update what the player sees
+                engine.update_visibility()
 
-                # Move Monsters
-                engine.move_monsters()
+            if game_state != "EXPLORE":
+                continue
+            engine.redraw()
 
-                # Check for Combat
-                active_enemy = engine.check_for_combat()
-                if active_enemy:
-                    game_state = "BATTLE"
-            else:
-                print("The way is blocked!")
+            # Check if stairs changed the map ID
+            if data.GAME_STATE["current_map"] != last_map_id:
+                last_map_id = data.GAME_STATE["current_map"]
                 engine.pause()
+                current_level = engine.get_level_data(last_map_id)
+                # Reset fog for new map size
+                data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
+                           for _ in range(current_level["height"])]
+                continue  # Re-draw immediately on the new map
+
+            # Move Monsters
+            engine.move_monsters()
+
+            # Check for Combat
+            active_enemy = engine.check_for_combat()
+            if active_enemy:
+                game_state = "BATTLE"
 
         elif game_state == "GAME OVER":
             if engine.death_check() == "death":

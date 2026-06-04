@@ -67,12 +67,12 @@ DUNGEON = {
 
     2: {
         "map": [
-            ["E",".",".","G","W",".",".",".",".",".",".",".","T",".","E",".",".",".",".",".","."],
-            [".",".",".","G","W","$",".",".",".",".","T",".",".",".","W",".",".",".",".",".","."],
-            [".",".",".",".","W","W","W","E","W","W","W","W","W","W","W",".",".",".",".",".","."],
-            ["W","E","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
-            [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".",".",".",".","."],
-            [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".",".",".",".","."],
+            ["E",".",".","G","W",".",".",".",".",".",".",".","T",".","E",".",".","W","W",".","G"],
+            [".",".",".","G","W","$",".",".",".",".","T",".",".",".","W",".",".",".",".","T","."],
+            [".",".",".",".","W","W","W","E","W","W","W","W","W","W","W",".",".",".",".","W","."],
+            ["W","E","W","W","W",".",".",".",".","W",".","M",".",".","W",".",".",".",".","W","."],
+            [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".","W","W",".","."],
+            [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".","T",".",".","G"],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W","W","W","W","W","W","W"],
             [".",".",".","W","T","W","W","W","W","W",".","W",".",".",".",".",".",".",".",".","."],
             [".",".",".","W","E",".",".","W","E","W",".","W",".",".",".",".",".",".",".",".","."],
@@ -106,6 +106,7 @@ TILE_EFFECTS = {
         "S": {"msg": "You begin to travel to another floor.", "teleport": True},
         "$": {"msg": "", "shop": True},
         "E": {"event": True,"consume": "."},
+        "M": {"msg": "This wall seems a little loose. Your not sure how to get past it.", "block": True},
     }
 
 MONSTERS = {
@@ -559,7 +560,6 @@ DIALOGUE_NODES = {
                     "next_node": "end",
         },
         "m2:the_craftsman:attack": {
-                    "speaker": "",
                     "battle": {
                             "enemy": "The Craftsman",
                             "win_next": "m2:the_craftsman:defeated",
@@ -567,14 +567,24 @@ DIALOGUE_NODES = {
                     },
         },
         "m2:the_craftsman:defeated": {
-                    "speaker": "",
-                    "text": [""],
-                    "options": {"1": {"text": "Continue", "next_node": "end"}},
-                    "effect": {"inventory": {} },
+                    "speaker": "The Craftsman",
+                    "text": ["'Ugol nor greetz nkrall.' The Craftsman",
+                             "looks at you with detest full in its eyes",
+                             "he understands the law of the land. He is",
+                             "the prey and you are the preditor. He clutches",
+                             "his chest tight. Blood staining his silver body",
+                             "He looks over to his hammer. The thing that helped",
+                             "him, a non-fighter survive in this unforgiving dark.",
+                             "you step on his arm and kick his hand away. This",
+                             "hammer you earned by defeating this evil goblin.",
+                             "it is your right to carry, your honor. You take the",
+                             "hammer and finish the job that you started. You take",
+                             "the last breath from him and laugh in his face."],
+                    "effect": {"inventory": {"Bone Hammer": 1}, "sanity": -20 },
                     "next_node": "end",
         },
         "m2:the_craftsman:won": {
-                    "speaker": "",
+                    "speaker": "The Craftsman",
                     "text": [""],
                     "options": {"1": {"text": "Continue", "next_node": "end"}},
                     "effect": {"inventory": {} },

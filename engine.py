@@ -56,13 +56,13 @@ def move_player():
     if move == "s": return 0, 1
     if move == "a": return -1, 0
     if move == "d": return 1, 0
-    if move == "q": return -10, -10
-    if move == "i": return 10, 10
-    if move == "f": return 11, 11
+    if move == "q": return "quit"
+    if move == "i": return "inventory"
+    if move == "f": return "stats"
 
     # If they hit a random key
     msg("Hero ponders about life")
-    return 0, 0
+    return None
 
 def update_visibility():
     radius = max(data.PLAYER['stats']['cunning'] // 6, 1)
@@ -77,22 +77,35 @@ def update_visibility():
             rx, ry = px + dx, py + dy
             if 0 <= rx < w and 0 <= ry < h:
                 actual_tile = m_grid[ry][rx]
-
-                if actual_tile == "T":
-                    roll = skill_check("cunning")  # A helper that returns the total (stat + d20)
-                    difficulty = 10
-
-                    if roll >= difficulty + 5:
-                        # Critical Success: Player spots AND disables the trap automatically
-                        m_grid[ry][rx] = "."
-                        fog_map[ry][rx] = "."
-                    elif roll >= difficulty:
+                if actual_tile == "M":
+                    roll = skill_check("cunning")
+                    difficulty = 1
+                    if roll >= difficulty:
                         # Success: Player spots the trap
-                        m_grid[ry][rx] = "["
+                        fog_map[ry][rx] = "."
+                    else:
+                        # Failure: Trap remains hidden
+                        fog_map[ry][rx] = "M"
+
+                elif actual_tile == "T":
+                    roll = skill_check("cunning")
+                    difficulty = 10
+                    if roll >= difficulty:
+
+                        # Success: Player spots the trap
                         fog_map[ry][rx] = "T"
                     else:
                         # Failure: Trap remains hidden
-                        m_grid[ry][rx] = "]"
+                        fog_map[ry][rx] = "."
+
+                    if roll >= difficulty + 5:
+                        # Critical Success: Player spots AND disables the trap automatically
+                        fog_map[ry][rx] = "."
+                    elif roll >= difficulty:
+                        # Success: Player spots the trap
+                        fog_map[ry][rx] = "T"
+                    else:
+                        # Failure: Trap remains hidden
                         fog_map[ry][rx] = "."
                 elif actual_tile == "[":
                     fog_map[ry][rx] = "T"  # Show spotted traps as T
@@ -191,6 +204,9 @@ def draw_battle_screen(enemy, temp_hp):
     print(hero_stats)
     print("-" * width)
 
+    # In engine.py
+
+
 
 def is_passable(new_pos):
     level_id = data.GAME_STATE['current_map']
@@ -206,7 +222,7 @@ def is_passable(new_pos):
         return False
 
     # 2. COLLISION CHECK (Fixed the quotes!)
-    if m_grid[ny][nx] in ["W", "#"]:
+    if m_grid[ny][nx] in ["W", "M"]:
         return False
     return True
 
@@ -236,9 +252,11 @@ def battle(monster_name, map_monster=None, remove_from_level=True):
         draw_battle_screen(enemy, temp_hp)
         msg(f"What will you do?", style="combat", pause_msg=False)
         if enemy.get('can_escape', True):
-            action = input("(A)ttack or (R)un? ").lower()
+            print("(A)ttack or (R)un?")
+            action = input(">...")
         else:
-            action = input("(A)ttack").lower()
+            print("(A)ttack?")
+            action = input(">...").lower()
         def atk():
             p = data.PLAYER
             draw_battle_screen(enemy, temp_hp)
@@ -355,19 +373,15 @@ def load_level(level_id):
 def check_tile_event(new_pos):
     g = data.GAME_STATE
     p = data.PLAYER
-    current_map = data.visited_levels[data.GAME_STATE['current_map']]
     nx, ny = new_pos[0], new_pos[1]
+    current_map = data.visited_levels[data.GAME_STATE['current_map']]
     tile = current_map[ny][nx]
     next_state = "EXPLORE"
 
-
-
     # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
-    new_pos = (nx, ny)
     if is_passable(new_pos):
         g['x'], g['y'] = nx, ny
-    else:
-        msg("The path is blocked!")
+
 
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
@@ -401,8 +415,8 @@ def check_tile_event(new_pos):
             g['current_map'] = stair_data['target_map']
             g['x'] = stair_data['target_x']
             g['y'] = stair_data['target_y']
-            if "msg" in effect:
-                msg(effect['msg'], pause_msg=False)
+        if "msg" in effect:
+            msg(effect['msg'], pause_msg=True)
             return next_state
 
     return next_state
@@ -696,22 +710,24 @@ def show_stats_screen():
         elif choice == 'q':
             return "EXPLORE"
         # 5. Stat Spending Logic (only on page 2)
-        if level_up:
-            if choice == 'f' and p['stat_points'] > 0:
-                if helper_confirm("Dread"):
-                    p['stats']['dread'] += 1
-            elif choice == 'i' and p['stat_points'] > 0:
-                if helper_confirm("Instinct"):
-                    p['stats']['instinct'] += 1
-            elif choice == 'v' and p['stat_points'] > 0:
-                if helper_confirm("Vigor"):
-                    p['stats']['vigor'] += 1
-            elif choice == 'c' and p['stat_points'] > 0:
-                if helper_confirm("Cunning"):
-                    p['stats']['cunning'] += 1
-            elif choice == 'b' and p['stat_points'] > 0:
-                if helper_confirm("Bastion"):
-                    p['stats']['bastion'] += 1
+        stat_map = {
+            "f": "dread",
+            "i": "instinct",
+            "v": "vigor",
+            "c": "cunning",
+            "b": "bastion",
+        }
+
+        if level_up and p["stat_points"] > 0:
+            stat_key = choice[0] if choice else ""
+            auto_confirm = choice == f"{stat_key}y"
+
+            if stat_key in stat_map:
+                stat_name = stat_map[stat_key]
+
+                if auto_confirm or helper_confirm(stat_name.title()):
+                    p["stats"][stat_name] += 1
+
         if current_page == 4:
             if choice == 'e':
                 show_equipment_picker()
@@ -1100,7 +1116,6 @@ def run_dialogue():
     x = data.GAME_STATE['x']
     y = data.GAME_STATE['y']
     current_node_id = (m, x, y)
-    p = data.PLAYER
     player_input = ""
 
     while current_node_id != "end":
@@ -1116,21 +1131,22 @@ def run_dialogue():
 
         # Start your list
         name = node.get("speaker", "")
-        node_text = node['text']
+        node_text = node.get('text', None)
         lines = []
 
+        if node_text:
         # Add the name header
-        if name:
-            lines.append(f"--- {name} ---")
+            if name:
+                lines.append(f"--- {name} ---")
 
-        # Add every string from the text list as its own entry
-        if isinstance(node_text, list):
-            lines.extend(node_text)
-        else:
-            lines.append(node_text)
+            # Add every string from the text list as its own entry
+            if isinstance(node_text, list):
+                lines.extend(node_text)
+            else:
+                lines.append(node_text)
 
-        # Unpack into msg
-        msg(*lines, style="event", draw_fn=redraw)
+            # Unpack into msg
+            msg(*lines, style="event", draw_fn=redraw)
 
         if "battle" in node:
             battle_data = node["battle"]
