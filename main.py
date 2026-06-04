@@ -124,7 +124,17 @@ def main():
         elif game_state == "BATTLE":
             game_state = "EXPLORE"
             continue
-            #game_state = engine.battle(active_enemy)
+            result = engine.battle(
+                active_enemy["name"],
+                map_monster=active_enemy,
+                remove_from_level=True
+            )
+            if result == "win":
+                game_state = "EXPLORE"
+            elif result == "escape":
+                game_state = "EXPLORE"
+            else:
+                game_state = "GAME OVER"
 
         elif game_state == "INVENTORY":
             game_state = engine.show_inventory()

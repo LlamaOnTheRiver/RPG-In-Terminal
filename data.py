@@ -60,8 +60,8 @@ DUNGEON = {
             (2,8): {"target_map": 2, "target_x": 4, "target_y": 4},
         },
         "monsters":[
-            {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
-            {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5}
+            {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m"},
+            {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m"}
         ],
     },
 
@@ -82,9 +82,9 @@ DUNGEON = {
         "stairs":{(4,4): {"target_map": 1, "target_x": 8, "target_y": 2},
                   },
         "monsters": [
-            {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 10},
-            {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5},
-            {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5}
+            {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m"},
+            {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m"},
+            {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m"}
         ],
         "shop":{
                     "Small Health Potion": 10,
@@ -128,7 +128,8 @@ MONSTERS = {
         "hp": 15,
         "dmg": 5,
         "madness": 2,
-        "intro":["The rat looks hideously deformed.", "It starts oozing yellowish thick liquid from it's pours"],
+        "intro":["The rat looks hideously deformed.", "It starts oozing ",
+                "yellowish thick liquid from it's pours"],
         "cry":["The oily rat lunges at you", "and starts gnawing on your flesh."],
         "loot_weights": {
             "common": 90,
@@ -152,6 +153,24 @@ MONSTERS = {
         }
 
     },
+    "The Craftsman": {
+        "name": "The Craftsman",
+        "hp": 35,
+        "dmg": 21,
+        "madness": 10,
+        "can_escape": False,
+        "intro":["The Craftsman twirls its' hammer in his hand,"
+                 "rage in his eyes, for destroying his precious",
+                 "bones."],
+        "cry":["'Hak nar wrathek!'"],
+        "loot_weights": {
+            "common": 70,
+            "rare": 25,
+            "epic": 5,
+            "legendary": 0
+        }
+
+    },
     "Dragon": {
         "hp": 500,
         "dmg": 50,
@@ -168,7 +187,7 @@ MONSTERS = {
 LOOT_DATA = {
     "common": ["Rusty Sword", "Small Health Potion", "Leather Scraps"],
     "rare": ["Steel Longsword", "Large Health Potion", "Iron Shield"],
-    "epic": [],
+    "epic": ["Big Nose"],
     "legendary": ["Excalibur", "Dragon Scale Armor"]
 }
 ITEMS = {
@@ -294,7 +313,7 @@ DIALOGUE_NODES = {
                 },
                 "2": {
                     "text": "Gold is worthless to you. You take a potion and close the chest lid.",
-                    "effect":{"inventory": "Small Health Potion" },
+                    "effect":{"inventory": {"Small Health Potion": 1} },
                     "next_node": "end",
                 },
                 "3": {
@@ -376,10 +395,7 @@ DIALOGUE_NODES = {
                 },
                 "3": {
                     "text": "Attack the craftsman",
-                    "skill_required": "cunning",
-                    "difficulty": 20,
-                    "success_node": "m2:the_craftsman:talk",
-                    "failure_node": "m2:the_craftsman:attack",
+                    "next_node": "m2:the_craftsman:attack",
                 },
                 "4": {
                     "text": "[Goblin Emblem]Show him your emblem.",
@@ -411,7 +427,7 @@ DIALOGUE_NODES = {
             "speaker": "",
             "text": [""],
             "options": {"1": {"text": "Continue", "next_node": "end"}},
-            "effect": {"inventory": "" },
+            "effect": {"inventory": {} },
             "next_node": "end",
         },
         "m2:cracked_wall:busted": {
@@ -513,31 +529,62 @@ DIALOGUE_NODES = {
                     "next_node": "end",
         },
         "m2:the_craftsman:sneak": {
-                    "speaker": "",
-                    "text": [""],
-                    "options": {"1": {"text": "Continue", "next_node": "end"}},
-                    "effect": {"inventory": "" },
+                    "speaker": "The Craftsman",
+                    "text": ["You sneak past him, not to disturb his work.",
+                             "You feel a sense of clarity come over you."],
+                    "effect": {"sanity": 15, "xp": 50},
                     "next_node": "end",
         },
         "m2:the_craftsman:alert": {
-                    "speaker": "",
-                    "text": [""],
-                    "options": {"1": {"text": "Continue", "next_node": "end"}},
-                    "effect": {"inventory": "" },
+                    "speaker": "The Craftsman",
+                    "text": ["You try and sneak past. To your horror, you trip over",
+                             "One of the bones and the bone pile comes clanking down.",
+                             "The craftsman whips around in a state of shock. He then",
+                             "see's you and that shock turns into rage. He picks up his",
+                             "hammer and begins his attack. To a craftsman, his work is",
+                             "life or death."],
+                    "battle": {
+                            "enemy": "The Craftsman",
+                            "win_next": "m2:the_craftsman:defeated",
+                            "lose_next": "m2:the_craftsman:won"
+                    },
+                    "effect": {"inventory": {} },
                     "next_node": "end",
         },
         "m2:the_craftsman:talk": {
                     "speaker": "",
                     "text": [""],
                     "options": {"1": {"text": "Continue", "next_node": "end"}},
-                    "effect": {"inventory": "" },
+                    "effect": {"inventory": {} },
                     "next_node": "end",
         },
         "m2:the_craftsman:attack": {
                     "speaker": "",
+                    "battle": {
+                            "enemy": "The Craftsman",
+                            "win_next": "m2:the_craftsman:defeated",
+                            "lose_next": "m2:the_craftsman:won"
+                    },
+        },
+        "m2:the_craftsman:defeated": {
+                    "speaker": "",
                     "text": [""],
                     "options": {"1": {"text": "Continue", "next_node": "end"}},
-                    "effect": {"inventory": "" },
+                    "effect": {"inventory": {} },
+                    "next_node": "end",
+        },
+        "m2:the_craftsman:won": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": {} },
+                    "next_node": "end",
+        },
+        "master": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": {} },
                     "next_node": "end",
         },
 

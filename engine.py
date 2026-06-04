@@ -210,38 +210,35 @@ def is_passable(new_pos):
         return False
     return True
 
-def battle(active_enemy):
+def battle(monster_name, map_monster=None, remove_from_level=True):
     current_level = data.DUNGEON[data.GAME_STATE['current_map']]
-    msg(f"A wild {active_enemy['name']} appeared!", style="combat")
     # Update player stats based on current level/points
     stats = get_derived_stats()
     # [atk, accuracy, crit_chance, regen, max_hp, armor]
-
-    # Now use the derived values
-
-
-    enemy = data.MONSTERS[active_enemy['name']]
+    enemy = data.MONSTERS[monster_name]
     # Extract all lines after the first one
     # Slicing is safe: if the list is short, it just returns what it can (even an empty list)
-    extra_lines = enemy['intro'][1:4]
-
+    msg(f"A wild {monster_name} appeared!", style="combat")
     clear_screen()
-
     # Unpack the list into the optional parameters
-    msg(enemy['intro'][0], *extra_lines, style='combat')
+    msg(enemy['intro'][0], style='combat')
     temp_hp = enemy['hp']
     while True:
         p_hit = random.randint(1, 100) <= stats[1]
         p_atk = stats[0]
         p_crit = random.randint(1,100) <= stats[2]
         data.PLAYER['hp'] += stats[3]
+        can_escape = enemy.get("can_escape", True)
         if data.PLAYER['hp'] > data.PLAYER['max_hp']:
             data.PLAYER['hp'] = data.PLAYER['max_hp']
         p_armor = stats[5]
         clear_screen()
         draw_battle_screen(enemy, temp_hp)
         msg(f"What will you do?", style="combat", pause_msg=False)
-        action = input("(A)ttack or (R)un? ").lower()
+        if enemy.get('can_escape', True):
+            action = input("(A)ttack or (R)un? ").lower()
+        else:
+            action = input("(A)ttack").lower()
         def atk():
             p = data.PLAYER
             draw_battle_screen(enemy, temp_hp)
@@ -275,28 +272,31 @@ def battle(active_enemy):
                     draw_battle_screen(enemy, temp_hp)
                     xp_screen(enemy)
                     # Remove the monster from the live list
-                    current_level['monsters'].remove(active_enemy)
-                    return "EXPLORE"
+                    if remove_from_level and map_monster is not None:
+                        if map_monster in current_level["monsters"]:
+                            current_level["monsters"].remove(map_monster)
+                    return "win"
                 else:
                     if atk():
-                        return "GAME OVER"
+                        return "lose"
             else:
                 clear_screen()
                 draw_battle_screen(enemy, temp_hp)
                 msg(f"{data.PLAYER['name']} missed their attack!", style="combat")
                 if atk():
-                    return "GAME OVER"
-        elif action == "r":
+                    return "lose"
+        elif action == "r" and can_escape:
             num = random.randint(1, 3)
             if num == 3:
                 msg(f"You managed to get away from the {enemy['name']}", style="combat")
-                if active_enemy in current_level['monsters']:
-                    current_level['monsters'].remove(active_enemy)
-                return "EXPLORE"
+                if remove_from_level and map_monster is not None:
+                    if map_monster in current_level["monsters"]:
+                        current_level["monsters"].remove(map_monster)
+                return "escape"
             else:
                 msg(f"The {enemy['name']} wont let you escape", style="combat")
                 if atk():
-                    return "GAME OVER"
+                    return "lose"
 
 def sanity_bar():
     num = data.PLAYER['sanity'] // 10
@@ -1011,7 +1011,8 @@ def skill_check(skill_name):
     die_roll = random.randint(1, 20)
     return p_stat + die_roll
 
-def apply_effect(eff, p):
+def apply_effect(eff):
+    p = data.PLAYER
     p['hp'] = min(p['max_hp'], max(p['hp'] + eff.get("hp", 0), 0))
     p['gp'] = max(p['gp'] + eff.get("gp", 0), 0)
     p['xp'] += eff.get("xp", 0)
@@ -1022,6 +1023,75 @@ def apply_effect(eff, p):
             p["inventory"][item] = p["inventory"].get(item, 0) + qty
             if p["inventory"][item] <= 0:
                 del p["inventory"][item]
+
+def get_player_choice(options):
+    dim = "\033[90m"
+    reset = "\033[0m"
+    border_color = "\033[34m"
+    p = data.PLAYER
+
+    while True:
+        valid_choices = set()
+        choice_lines = []
+
+        for key, choice in options.items():
+            required = choice.get("item_required", {})
+            inventory = p.get("inventory", {})
+            can_use = all(
+                inventory.get(item, 0) >= qty
+                for item, qty in required.items()
+            )
+
+            if required and not can_use:
+                choice_lines.append(
+                    f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}"
+                )
+            else:
+                choice_lines.append(f"{key}: {choice['text']}")
+                valid_choices.add(key)
+
+        msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
+        player_input = input(">...")
+
+        if player_input not in valid_choices:
+            continue
+
+        return options[player_input]
+
+def resolve_choice(selected_choice, current_node):
+    if "effect" in selected_choice and "item_required" not in selected_choice:
+        apply_effect(selected_choice["effect"])
+
+    if "skill_required" in selected_choice:
+        skill = selected_choice["skill_required"]
+        difficulty = selected_choice["difficulty"]
+
+        if skill_check(skill) >= difficulty:
+            msg("Success!", style="skill")
+            return selected_choice["success_node"]
+        else:
+            msg("Failure!", style="skill")
+            return selected_choice["failure_node"]
+
+    if "battle" in selected_choice:
+        battle_data = selected_choice["battle"]
+        result = battle(battle_data["enemy"], remove_from_level=False)
+
+        if result == "win":
+            return battle_data["win_next"]
+        else:
+            return battle_data["lose_next"]
+
+    if "battle" in current_node:
+        battle_data = current_node["battle"]
+        result = battle(battle_data["enemy"], remove_from_level=False)
+
+        if result == "win":
+            return battle_data["win_next"]
+        else:
+            return battle_data["lose_next"]
+
+    return selected_choice.get("next_node", "end")
 
 
 def run_dialogue():
@@ -1034,14 +1104,15 @@ def run_dialogue():
     player_input = ""
 
     while current_node_id != "end":
-        if death_check() == "death" or death_check() == "sanity":
+        death_state = death_check()
+        if death_state in ("death", "sanity"):
             return "GAME OVER"
         node = data.DIALOGUE_NODES.get(current_node_id)
         if not node:
             msg(f"Error: No dialogue found for {current_node_id}", style="error")
             break
         if "effect" in node:
-            apply_effect(node["effect"], p)
+            apply_effect(node["effect"])
 
         # Start your list
         name = node.get("speaker", "")
@@ -1061,61 +1132,24 @@ def run_dialogue():
         # Unpack into msg
         msg(*lines, style="event", draw_fn=redraw)
 
+        if "battle" in node:
+            battle_data = node["battle"]
+            result = battle(battle_data["enemy"], remove_from_level=False)
+
+            if result == "win":
+                current_node_id = battle_data["win_next"]
+            else:
+                current_node_id = battle_data["lose_next"]
+
+            continue
+
         # Show choices without a pause
         options = node.get("options", {})
-
         if options:
+            selected_choice = get_player_choice(options)
+            current_node_id = resolve_choice(selected_choice, node)
+            continue
 
-            while True:
-                dim = "\033[90m"
-                reset = "\033[0m"
-                border_color = "\033[34m"
-                valid_choices = set()
-                choice_lines = []
-
-                for key, choice in options.items():
-                    required = choice.get("item_required", {})
-                    inventory = p.get("inventory", {})
-                    can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
-
-                    if required and not can_use:
-                        choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
-                    else:
-                        choice_lines.append(f"{key}: {choice['text']}")
-                        valid_choices.add(key)
-
-                msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
-                player_input = input(">...")
-
-                if player_input not in valid_choices:
-                    continue
-
-                break
-
-            '''
-            while True:
-                dim = "\033[90m"
-                reset = "\033[0m"
-                border_color = "\033[34m"
-                choice_lines = []
-
-                for key, choice in options.items():
-                    required = choice.get("item_required", {})
-                    inventory = p.get("inventory", {})
-                    can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
-
-                    if required and not can_use:
-                        choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
-                    else:
-                        choice_lines.append(f"{key}: {choice['text']}")
-
-                msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
-                player_input = input(">...")
-                if player_input not in options:
-                    print("Invalid choice.")
-                    continue
-                break
-                '''
 
         elif "next_node" in node:
             pause()
@@ -1128,7 +1162,7 @@ def run_dialogue():
             selected_choice = options[player_input]
 
             if "effect" in selected_choice and "item_required" not in selected_choice:
-                apply_effect(selected_choice["effect"], p)
+                apply_effect(selected_choice["effect"])
 
             # 4. Check for a skill check before moving to the next node
             if "skill_required" in selected_choice:
@@ -1142,9 +1176,17 @@ def run_dialogue():
                 else:
                     msg("Failure!", style="skill")
                     current_node_id = selected_choice["failure_node"]
-            else:
-                # No skill check, just move to the next part of the story
-                current_node_id = selected_choice["next_node"]
+
+            if "battle" in node:
+                battle_data = node["battle"]
+                result = battle(battle_data["enemy"], remove_from_level=False)
+
+                if result == "win":
+                    current_node_id = battle_data["win_next"]
+                else:
+                    current_node_id = battle_data["lose_next"]
+
+                continue
 
     return "EXPLORE"
 
