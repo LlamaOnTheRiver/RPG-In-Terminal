@@ -64,7 +64,8 @@ def move_player():
     msg("Hero ponders about life")
     return 0, 0
 
-def update_visibility(radius=1):
+def update_visibility():
+    radius = max(data.PLAYER['stats']['cunning'] // 6, 1)
     fog_map = data.GAME_STATE['fog_map']
     m_grid = data.visited_levels[data.GAME_STATE['current_map']]
     w = len(m_grid[0]) if len(m_grid) > 0 else 0
@@ -1064,23 +1065,57 @@ def run_dialogue():
         options = node.get("options", {})
 
         if options:
-            dim = "\033[90m"
-            reset = "\033[0m"
-            border_color = "\033[34m"
-            choice_lines = []
 
-            for key, choice in options.items():
-                required = choice.get("item_required", {})
-                inventory = p.get("inventory", {})
-                can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
+            while True:
+                dim = "\033[90m"
+                reset = "\033[0m"
+                border_color = "\033[34m"
+                valid_choices = set()
+                choice_lines = []
 
-                if required and not can_use:
-                    choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
-                else:
-                    choice_lines.append(f"{key}: {choice['text']}")
+                for key, choice in options.items():
+                    required = choice.get("item_required", {})
+                    inventory = p.get("inventory", {})
+                    can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
 
-            msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
-            player_input = input(">...")
+                    if required and not can_use:
+                        choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
+                    else:
+                        choice_lines.append(f"{key}: {choice['text']}")
+                        valid_choices.add(key)
+
+                msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
+                player_input = input(">...")
+
+                if player_input not in valid_choices:
+                    continue
+
+                break
+
+            '''
+            while True:
+                dim = "\033[90m"
+                reset = "\033[0m"
+                border_color = "\033[34m"
+                choice_lines = []
+
+                for key, choice in options.items():
+                    required = choice.get("item_required", {})
+                    inventory = p.get("inventory", {})
+                    can_use = all(inventory.get(item, 0) >= qty for item, qty in required.items())
+
+                    if required and not can_use:
+                        choice_lines.append(f"{dim}{key}: [LOCKED] {choice['text']}{reset}{border_color}")
+                    else:
+                        choice_lines.append(f"{key}: {choice['text']}")
+
+                msg(*choice_lines, style="event", draw_fn=redraw, pause_msg=False)
+                player_input = input(">...")
+                if player_input not in options:
+                    print("Invalid choice.")
+                    continue
+                break
+                '''
 
         elif "next_node" in node:
             pause()
@@ -1099,8 +1134,6 @@ def run_dialogue():
             if "skill_required" in selected_choice:
                 skill = selected_choice["skill_required"]
                 difficulty = selected_choice["difficulty"]
-
-
 
                 if skill_check(skill) >= difficulty:
                     msg("Success!", style="skill")

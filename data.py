@@ -36,10 +36,11 @@ PLAYER = {
             "XP Pot": 13,
             "Iron Helmet": 1,
             "Steel Helmet": 2,
+            "Goblin Emblem": 1,
         }
 }
 GAME_STATE = {
-        "x": 1,
+        "x": 10,
         "y": 1,
         "current_map": 2,
         "marker": "\033[94mP\033[0m",
@@ -51,7 +52,7 @@ visited_levels = {}
 DUNGEON = {
     1: {
         "map": [
-            ["$", ".", ".",".", ".", ".","W", "G", "G"],
+            [".", ".", ".",".", ".", ".","W", "G", "G"],
             ["T", ".", ".","W", ".", "W","W", "G", "G"],
             ["T", ".", ".","W", ".", ".",".", ".", "S"]
         ],
@@ -62,18 +63,13 @@ DUNGEON = {
             {"name": "Rat", "x": 2, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5},
             {"name": "Rat", "x": 5, "y": 0, "marker": "\033[91mM\033[0m", "hp": 15, "dmg": 5}
         ],
-        "shop":{
-            "Small Health Potion": 10,
-            "Bread": 5,
-            "Iron Helmet": 50,
-        },
     },
 
     2: {
         "map": [
-            ["E","T","T","G","W",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-            ["T",".",".","G","W",".",".",".",".",".",".",".",".",".","W",".",".",".",".",".","."],
-            ["T",".","T","T","W","W","W",".","W","W","W","W","W","W","W",".",".",".",".",".","."],
+            ["E",".",".","G","W",".",".",".",".",".",".",".","T",".","E",".",".",".",".",".","."],
+            [".",".",".","G","W","$",".",".",".",".","T",".",".",".","W",".",".",".",".",".","."],
+            [".",".",".",".","W","W","W","E","W","W","W","W","W","W","W",".",".",".",".",".","."],
             ["W","E","W","W","W",".",".",".",".","W",".",".",".",".","W",".",".",".",".",".","."],
             [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".",".",".",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".",".",".",".","."],
@@ -89,7 +85,13 @@ DUNGEON = {
             {"name": "Ghoul", "x": 1, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 10},
             {"name": "Goblin", "x": 4, "y": 0, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5},
             {"name": "Goblin", "x": 0, "y": 2, "marker": "\033[91mM\033[0m", "hp": 25, "dmg": 5}
-        ]
+        ],
+        "shop":{
+                    "Small Health Potion": 10,
+                    "Bread": 5,
+                    "Iron Helmet": 1,
+                    "Iron Boots": 1,
+                },
     }
 }
 
@@ -280,9 +282,9 @@ DIALOGUE_NODES = {
         },
     (2, 0, 0): {
             "speaker": "Chest",
-            "text": ["You see a chest full of gold and potions.",
-                     "Your eyes grow big as you decide to take the whole stash",
-                     "You see an old note stuck to the top of the lid",
+            "text": ["You see a chest full of gold and potions. ",
+                     "Your eyes grow big as you decide to take the whole stash ",
+                     "You see an old note stuck to the top of the lid ",
                      "Choose One: Take a potion or gold"],
             "options": {
                 "1": {
@@ -306,30 +308,30 @@ DIALOGUE_NODES = {
     },
 
     (2, 4, 8): {
-            "text": ["The room looks crude. Grime lines the walls.",
-                     "Makeshift crooked cupboards cover a portion of",
-                     "the wall. It appears to be made out of bone and",
-                     "some type of sinew holding everything together.",
-                     "Utensils are scattered over the countertops.",
-                     "You hear a noise coming from the corner of the",
-                     "room. It sounds like a small creature is in",
-                     "pain. The heavy labored breathing and pungent",
-                     "stench that wafts through the room seems to say",
+            "text": ["The room looks crude. Grime lines the walls. ",
+                     "Makeshift crooked cupboards cover a portion of ",
+                     "the wall. It appears to be made out of bone and ",
+                     "some type of sinew holding everything together. ",
+                     "Utensils are scattered over the countertops. ",
+                     "You hear a noise coming from the corner of the ",
+                     "room. It sounds like a small creature is in ",
+                     "pain. The heavy labored breathing and pungent ",
+                     "stench that wafts through the room seems to say ",
                      "the creature is near death."],
             "next_node": "end",
             },
 
     (2, 8, 8): {
             "speaker": "Goblin",
-            "text": ["As you draw near you can see the shelves held up by bones",
-                     "in this small room. On the shelves are a number of jars",
-                     "with different concoctions of body parts. There are strange",
-                     "spices in the air. That are all repugnant. in the corner",
-                     "there lies a small goblin, wounded it's thick ichor is",
-                     "draining from the crude knife that's stuck in its stomach.",
-                     "It looks up at you, sensing that you are the predator and",
-                     "it is the prey. It wallows its final cry, defeated. 'Ick rak",
-                     "grald nkree.' its hand shakes as it goes for the knife stuck",
+            "text": ["As you draw near you can see the shelves held up by bones ",
+                     "in this small room. On the shelves are a number of jars ",
+                     "with different concoctions of body parts. There are strange ",
+                     "spices in the air. That are all repugnant. in the corner ",
+                     "there lies a small goblin, wounded it's thick ichor is ",
+                     "draining from the crude knife that's stuck in its stomach. ",
+                     "It looks up at you, sensing that you are the predator and ",
+                     "it is the prey. It wallows its final cry, defeated. 'Ick rak ",
+                     "grald nkree.' its hand shakes as it goes for the knife stuck ",
                      "in its belly, about to finish the job."],
             "options": {
                 "1": {
@@ -346,6 +348,62 @@ DIALOGUE_NODES = {
                 },
             },
             },
+
+    (2, 14, 0): {
+            "speaker": "The Craftsman",
+            "text": ["Bones litter this room of all different shapes and sizes.",
+                     "The horrid smell of dried flesh and cut bone wafts through",
+                     "the air. You use the inside of your shirt as meager protection",
+                     "against the assaulting smell. You see 3 workbenches, lined up",
+                     "towards the far wall. Laying haphazardly all around the benches",
+                     "there are all manner of interesting tools at the heart of the operation,",
+                     "a craftsman is hard at work at the bench, making what looks like a spear",
+                     "His thin ashen body stands about 4 feet tall. His snow white hair disheveled.",],
+            "options": {
+                "1": {
+                    "text": "[Instinct] Sneak your way past.",
+                    "skill_required": "instinct",
+                    "difficulty": 10,
+                    "success_node": "m2:the_craftsman:sneak",
+                    "failure_node": "m2:the_craftsman:alert",
+                },
+                "2": {
+                    "text": "[Cunning] Try and talk to the craftsman",
+                    "skill_required": "cunning",
+                    "difficulty": 20,
+                    "success_node": "m2:the_craftsman:talk",
+                    "failure_node": "m2:the_craftsman:attack",
+                },
+                "3": {
+                    "text": "Attack the craftsman",
+                    "skill_required": "cunning",
+                    "difficulty": 20,
+                    "success_node": "m2:the_craftsman:talk",
+                    "failure_node": "m2:the_craftsman:attack",
+                },
+                "4": {
+                    "text": "[Goblin Emblem]Show him your emblem.",
+                    "item_required": {"Goblin Emblem": 1},
+                    "next_node": "m2:the_craftsman:talk",
+                },
+            },
+            },
+    (2, 7, 2): {
+                "speaker": "Rubble",
+                "text": ["Before you is  A large pile of rocks. It "
+                         "Looked like a cave in happened centuries ago",
+                         "There are huge chunks of what looks like, "
+                         "marble. This room or what you can see of it, ",
+                         "looks extravagant. In the far distance beyond ",
+                         "the rubble that blocks your path. You could see ",
+                         "what looks like a dilapidated chair. You can imagine ",
+                         "it back when this cavern use to be a throne room. How ",
+                         "many guests did it entertain? You think back to your ",
+                         "recent situation. 'Neil... is that why you did it? for ",
+                         "the throne? We were on the same path. We could of done ",
+                         "this together. We....",
+                         "Neil, brother I don't understand."],
+                },
 
 
         #///The Story Branches///
@@ -436,22 +494,50 @@ DIALOGUE_NODES = {
         },
         "m2:goblin:dead": {
             "speaker": "Goblin",
-            "text": ["The goblin groans in pain.",
-                     "It lets out its final cry",
-                     "and then it is listless on",
-                     "the floor. You walk away",
+            "text": ["The goblin groans in pain. ",
+                     "It lets out its final cry ",
+                     "and then it is listless on ",
+                     "the floor. You walk away ",
                      "with nothing more to do"],
             "options": {"1": {"text": "Continue", "next_node": "end"}},
             "effect": {"sanity": -10},
         },
         "m2:goblin:bread": {
                     "speaker": "Goblin",
-                    "text": ["He eats the bread wincing, the cloth wrapped around",
-                             "him has stopped for now. You feel like this is all",
-                             "you can do for him now. 'Good luck friend.' 'Ark uh",
-                             "tar tar.' You step out into the dining area feeling"
+                    "text": ["He eats the bread wincing, the cloth wrapped around ",
+                             "him has stopped for now. You feel like this is all ",
+                             "you can do for him now. 'Good luck friend.' 'Ark uh ",
+                             "tar tar.' You step out into the dining area feeling "
                              "relieved."],
                     "effect": {"inventory": {"Bread": -1}, "sanity": 15},
+                    "next_node": "end",
+        },
+        "m2:the_craftsman:sneak": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": "" },
+                    "next_node": "end",
+        },
+        "m2:the_craftsman:alert": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": "" },
+                    "next_node": "end",
+        },
+        "m2:the_craftsman:talk": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": "" },
+                    "next_node": "end",
+        },
+        "m2:the_craftsman:attack": {
+                    "speaker": "",
+                    "text": [""],
+                    "options": {"1": {"text": "Continue", "next_node": "end"}},
+                    "effect": {"inventory": "" },
                     "next_node": "end",
         },
 
