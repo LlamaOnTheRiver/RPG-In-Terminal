@@ -53,22 +53,22 @@ def main():
                 # 2. ONLY check the event for the NEW position
                 game_state = engine.check_tile_event(new_pos)
 
+                # Check if stairs changed the map ID
+                if data.GAME_STATE["current_map"] != last_map_id:
+                    last_map_id = data.GAME_STATE["current_map"]
+                    engine.pause()
+                    current_level = engine.get_level_data(last_map_id)
+                    # Reset fog for new map size
+                    data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
+                                                  for _ in range(current_level["height"])]
+                    continue  # Re-draw immediately on the new map
+
                 # 3. THEN update what the player sees
                 engine.update_visibility()
 
             if game_state != "EXPLORE":
                 continue
             engine.redraw()
-
-            # Check if stairs changed the map ID
-            if data.GAME_STATE["current_map"] != last_map_id:
-                last_map_id = data.GAME_STATE["current_map"]
-                engine.pause()
-                current_level = engine.get_level_data(last_map_id)
-                # Reset fog for new map size
-                data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
-                           for _ in range(current_level["height"])]
-                continue  # Re-draw immediately on the new map
 
             # Move Monsters
             engine.move_monsters()
@@ -80,26 +80,14 @@ def main():
 
         elif game_state == "GAME OVER":
             if engine.death_check() == "death":
-                # ... existing messages and pauses ...
-
                 # 1. Reset the coordinates and map ID in the data source
                 data.GAME_STATE["current_map"] = 1
                 data.GAME_STATE["x"], data.GAME_STATE["y"] = 1, 1
                 data.PLAYER['hp'] = data.PLAYER['max_hp']
                 data.PLAYER['gp'] = int( data.PLAYER['gp'] * 0.8)
                 data.PLAYER['sanity'] -= 30
-
-                # 2. Wipe the visited memory so the maps reset to their original state
                 data.visited_levels = {}
-
-                # 3. CRITICAL: Use your function to reload the local loop variables!
                 current_level = engine.get_level_data(1)
-                # If you have other variables like monsters or width/height:
-                # monsters = level_info["monsters"]
-                # width = level_info["width"]
-
-                # 4. Reset the fog for the new starting position
-
                 data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
                for _ in range(current_level["height"])]
 

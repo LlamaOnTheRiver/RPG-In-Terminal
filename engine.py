@@ -222,7 +222,7 @@ def is_passable(new_pos):
         return False
 
     # 2. COLLISION CHECK (Fixed the quotes!)
-    if m_grid[ny][nx] in ["W", "M"]:
+    if m_grid[ny][nx] in ["W", "w"]:
         return False
     return True
 
@@ -371,25 +371,24 @@ def load_level(level_id):
 
 
 def check_tile_event(new_pos):
-    g = data.GAME_STATE
     p = data.PLAYER
     nx, ny = new_pos[0], new_pos[1]
     current_map = data.visited_levels[data.GAME_STATE['current_map']]
     tile = current_map[ny][nx]
     next_state = "EXPLORE"
 
-    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
-    if is_passable(new_pos):
-        g['x'], g['y'] = nx, ny
+    if tile == "w":
+        if skill_check("cunning") >= 15:
+            msg("You found a secret passage!")
+            current_map[ny][nx] = "."  # Transform the map!
+            tile = "."
 
+    # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
+    if is_passable(new_pos) or tile == ".":
+        data.GAME_STATE['x'], data.GAME_STATE['y'] = nx, ny
 
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
-
-        if effect.get("block"):
-            msg(effect['msg'])
-            return next_state # Stay in EXPLORE if blocked
-
 
         # Apply standard rewards (HP/GP)
         p['hp'] = min(p['max_hp'], p['hp'] + effect.get("hp", 0))
@@ -409,12 +408,12 @@ def check_tile_event(new_pos):
         if "teleport" in effect:
             cords = (ny, nx)
             # Grab all the secret data from the CURRENT map before changing anything
-            stair_data = data.DUNGEON[g['current_map']]['stairs'][cords]
+            stair_data = data.DUNGEON[data.GAME_STATE['current_map']]['stairs'][cords]
 
             # Now update the player using that saved data
-            g['current_map'] = stair_data['target_map']
-            g['x'] = stair_data['target_x']
-            g['y'] = stair_data['target_y']
+            data.GAME_STATE['current_map'] = stair_data['target_map']
+            data.GAME_STATE['x'] = stair_data['target_x']
+            data.GAME_STATE['y'] = stair_data['target_y']
         if "msg" in effect:
             msg(effect['msg'], pause_msg=True)
             return next_state
