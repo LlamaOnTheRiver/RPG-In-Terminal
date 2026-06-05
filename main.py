@@ -1,5 +1,6 @@
 import engine
 import data
+from utils import msg
 
 def main():
     # 1. Initialization
@@ -56,8 +57,8 @@ def main():
                 # Check if stairs changed the map ID
                 if data.GAME_STATE["current_map"] != last_map_id:
                     last_map_id = data.GAME_STATE["current_map"]
-                    engine.pause()
                     current_level = engine.get_level_data(last_map_id)
+
                     # Reset fog for new map size
                     data.GAME_STATE['fog_map'] = [[" " for _ in range(current_level["width"])]
                                                   for _ in range(current_level["height"])]
@@ -68,7 +69,6 @@ def main():
 
             if game_state != "EXPLORE":
                 continue
-            engine.redraw()
 
             # Move Monsters
             engine.move_monsters()

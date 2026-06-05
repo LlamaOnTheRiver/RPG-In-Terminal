@@ -48,6 +48,8 @@ def place_player_on_map(temp_view):
 
 
 def move_player():
+    clear_screen()
+    redraw()
     # Remove the while loop and the drawing from here!
     print("Move (wasd) |  (Q)uit | (I)nventory:")
     move = input(">...").strip().lower()
@@ -369,23 +371,47 @@ def load_level(level_id):
     # including the nested lists, so the original stays safe!
     return copy.deepcopy(data.DUNGEON[level_id])
 
+def clamp_new_pos(new_pos):
+    current_map = data.visited_levels[data.GAME_STATE['current_map']]
+    x, y = new_pos
+    if len(current_map) -1 >= y:
+        ny = y
+    else:
+        ny = len(current_map) -1
+    if y < 0:
+        ny = 0
+    if len(current_map[0]) -1 >= x:
+        nx = x
+    else:
+        nx = len(current_map[0]) -1
+    if x < 0:
+        nx = 0
+    return nx, ny
 
 def check_tile_event(new_pos):
     p = data.PLAYER
-    nx, ny = new_pos[0], new_pos[1]
+    nx, ny = clamp_new_pos(new_pos)
     current_map = data.visited_levels[data.GAME_STATE['current_map']]
     tile = current_map[ny][nx]
+    if is_passable(new_pos):
+        data.GAME_STATE['x'], data.GAME_STATE['y'] = nx, ny
+    else:
+        tile = None
+        if current_map[ny][nx] == "w":
+            if skill_check("cunning") >= 15:
+                msg("You found a secret passage!")
+                current_map[ny][nx] = "."  # Transform the map!
+            else:
+                msg("This wall seems to be loose,", "but there is no way through.")
+        else:
+            msg("The way is blocked!", style="error")
+            return "EXPLORE"
     next_state = "EXPLORE"
 
-    if tile == "w":
-        if skill_check("cunning") >= 15:
-            msg("You found a secret passage!")
-            current_map[ny][nx] = "."  # Transform the map!
-            tile = "."
+
 
     # 2. Boundary Check (Crucial to prevent "Index out of range" crashes)
-    if is_passable(new_pos) or tile == ".":
-        data.GAME_STATE['x'], data.GAME_STATE['y'] = nx, ny
+
 
     if tile in data.TILE_EFFECTS:
         effect = data.TILE_EFFECTS[tile]
@@ -1202,6 +1228,8 @@ def run_dialogue():
                     current_node_id = battle_data["lose_next"]
 
                 continue
+    clear_screen()
+    redraw()
 
     return "EXPLORE"
 
