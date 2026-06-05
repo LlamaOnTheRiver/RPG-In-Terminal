@@ -5,7 +5,44 @@ import items
 from utils import msg, pause, clear_screen
 
 
-# engine.py
+def show_guide():
+    clear_screen()
+    print(
+        "--- Controls --- \n"
+        "WASD: Move Player around the screen.\n"
+        "Your player is represented by the letter P\n\n"
+        "Q: Quit lets you quit the current session.\n\n"
+        "I: Inventory, shows your current inventory.\n"
+        "You can use A and D to move right or left if \n"
+        "you have alot of items. W and S changes the \n"
+        "category.\n\n"
+        "F: Character Sheet, lets you view your ability\n"
+        "scores, equipment, health, gold and anything \n"
+        "else useful. You can use E on the equipment \n"
+        "screen to equip your character."
+    )
+    pause()
+    clear_screen()
+    print(
+        "--- Map Tiles --- \n"
+        "W: W is a wall and you cannot move through it.\n\n"
+        "T: T is a trap and will do damage to you if you\n"
+        "step on it. Most traps are hidden and require\n"
+        "instinct to see.\n\n"
+        "M: M are monsters on the map and they will follow\n"
+        "and attack you if they run into you.\n\n"
+        "G: G is gold. You will get some gold if you step\n"
+        "on this tile\n\n"
+        "S: S are Stairs and will take you from one level to\n"
+        "another. \n\n"
+        "H: H is health. You will get some health if you step\n"
+        "on this tile\n\n"
+        "$: $ is the shop where you can buy and sell goods\n\n"
+        "E: Events will happen on this tile to progress the\n"
+        "story, good or bad things may happen be cautious.\n\n"
+    )
+    pause()
+    return "EXPLORE"
 
 def redraw():
     draw_stats()
@@ -51,7 +88,7 @@ def move_player():
     clear_screen()
     redraw()
     # Remove the while loop and the drawing from here!
-    print("Move (wasd) |  (Q)uit | (I)nventory:")
+    print("Move (wasd) |  (Q)uit | (H)elp:")
     move = input(">...").strip().lower()
 
     if move == "w": return 0, -1
@@ -61,10 +98,11 @@ def move_player():
     if move == "q": return "quit"
     if move == "i": return "inventory"
     if move == "f": return "stats"
+    if move == "h": return "help"
 
     # If they hit a random key
     msg("Hero ponders about life")
-    return None
+    return "wrong_key"
 
 def update_visibility():
     radius = max(data.PLAYER['stats']['cunning'] // 6, 1)
@@ -255,10 +293,10 @@ def battle(monster_name, map_monster=None, remove_from_level=True):
         msg(f"What will you do?", style="combat", pause_msg=False)
         if enemy.get('can_escape', True):
             print("(A)ttack or (R)un?")
-            action = input(">...")
+            action = input(">...").lower().strip()
         else:
             print("(A)ttack?")
-            action = input(">...").lower()
+            action = input(">...").lower().strip()
         def atk():
             p = data.PLAYER
             draw_battle_screen(enemy, temp_hp)
@@ -596,10 +634,15 @@ def helper_confirm(skill):
     return False
 
 
-
+first_level = True
 def show_stats_screen():
+    global first_level
     p = data.PLAYER
-    current_page = 1
+    if first_level:
+        current_page = 3
+        first_level = False
+    else:
+        current_page = 1
     total_pages = 4
 
     while True:

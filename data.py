@@ -7,7 +7,7 @@ PLAYER = {
         "gp": 0,
         "xp": 0,
         "xp_curve": 50,
-        "level": 20,
+        "level": 1,
         "stat_points": 0,
         "max_hp": 50,
         "max_sanity": 100,
@@ -30,19 +30,12 @@ PLAYER = {
             "Health Potion": 2,
             "Bread": 1,
             "Hair": 6,
-            "Sword": 3,
-            "Water": 4,
-            "Gold": 5,
-            "XP Pot": 13,
-            "Iron Helmet": 1,
-            "Steel Helmet": 2,
-            "Goblin Emblem": 1,
         }
 }
 GAME_STATE = {
-        "x": 0,
-        "y": 8,
-        "current_map": 3,
+        "x": 1,
+        "y": 1,
+        "current_map": 1,
         "marker": "\033[94mP\033[0m",
         "fog_map": []
 
@@ -52,7 +45,7 @@ visited_levels = {}
 DUNGEON = {
     1: {
         "map": [
-            [".", ".", ".",".", ".", ".","W", "G", "G"],
+            [".", ".", ".",".", ".", ".","W", "H", "G"],
             ["T", ".", ".","W", ".", "W","W", "G", "G"],
             ["T", ".", ".","W", ".", ".",".", ".", "S"]
         ],
@@ -70,11 +63,11 @@ DUNGEON = {
             ["E",".",".","G","W",".",".",".",".",".",".",".","T",".","E",".",".","W","W",".","G"],
             [".",".",".","G","W","$",".",".",".",".","T",".",".",".","W",".",".",".",".","T","."],
             [".",".",".",".","W","W","W","E","W","W","W","W","W","W","W",".",".",".",".","W","."],
-            ["W","E","W","W","W",".",".",".",".","W",".","w",".",".","W",".",".",".",".","W","."],
+            ["W","E","W","W","W",".",".",".",".","W",".","w",".",".","W",".",".",".",".","W","H"],
             [".",".",".",".","S",".",".",".",".","W",".","W",".",".",".",".",".","W","W",".","."],
             [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W",".",".","T",".",".","G"],
-            [".",".",".",".",".",".",".",".",".","W",".","W",".",".","W","W","W","W","W","W","W"],
-            [".",".",".","W","T","W","W","W","W","W",".","W",".",".",".",".",".","S",".",".","."],
+            ["H",".",".",".",".",".",".",".",".","W",".","W",".",".","W","W","W","W","W","W","W"],
+            [".",".",".","W","T","W","W","W","W","W","H","W",".",".",".",".",".","S",".",".","."],
             [".",".",".","W","E",".",".","W","E","W",".","W",".",".",".",".",".",".",".",".","."],
             ["T",".","T","W",".",".",".","W",".","W",".","W","W","W","W","W","W","W","W","W","."],
             ["G","T","G","W",".",".",".",".",".","W",".",".",".",".",".","E","W","G",".",".","."],
@@ -131,8 +124,6 @@ DUNGEON = {
 
 TILE_EFFECTS = {
         "T": {"msg": "TRAP! -10 HP", "hp": -10, "consume": "."},
-        "[": {"hp": -10, "consume": "."},
-        "]": {"hp": -10, "consume": "."},
         "G": {"msg": "GOLD! +15 GP", "gp": 15, "consume": "."},
         "H": {"msg": "HEALED! HP to 100", "hp": 100, "consume": "."},
         "W": {"msg": "A solid wall.", "block": True},
@@ -147,7 +138,7 @@ MONSTERS = {
             "name": "Ghoul",
             "hp": 20,
             "dmg": 15,
-            "madness": 4,
+            "madness": 9,
             "intro":["The Ghouls wispy form appears before you, wretched and torn."],
             "cry":["The Ghoul swipes through you with it's clawlike hand. Hitting your soul."],
             "loot_weights": {
@@ -161,7 +152,7 @@ MONSTERS = {
         "name": "Rat",
         "hp": 15,
         "dmg": 5,
-        "madness": 2,
+        "madness": 5,
         "intro":["The rat looks hideously deformed.", "It starts oozing ",
                 "yellowish thick liquid from it's pours"],
         "cry":["The oily rat lunges at you", "and starts gnawing on your flesh."],
@@ -176,7 +167,7 @@ MONSTERS = {
         "name": "Goblin",
         "hp": 20,
         "dmg": 15,
-        "madness": 3,
+        "madness": 13,
         "intro":["The Goblin takes it jagged club and licks the blood off it before attacking you."],
         "cry":["The crooked Goblin raises it's club and strikes!"],
         "loot_weights": {
@@ -191,7 +182,7 @@ MONSTERS = {
         "name": "The Craftsman",
         "hp": 35,
         "dmg": 21,
-        "madness": 10,
+        "madness": 18,
         "can_escape": False,
         "intro":["The Craftsman twirls its' hammer in his hand,"
                  "rage in his eyes, for destroying his precious",

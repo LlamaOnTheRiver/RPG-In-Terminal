@@ -4,12 +4,12 @@ from utils import msg
 
 def main():
     # 1. Initialization
-    game_state = "EXPLORE"
+    game_state = "STATS"
     # 1. Get the map data
-    m_grid = data.DUNGEON[2]['map']
+    m_grid = data.DUNGEON[1]['map']
 
     # 2. Identify the current map
-    last_map_id = 2
+    last_map_id = 1
     data.GAME_STATE['current_map'] = last_map_id
 
     # 3. CRITICAL: Store it in visited_levels so other functions can find it!
@@ -22,7 +22,6 @@ def main():
     active_enemy = None
 
     engine.clear_screen()
-    '''
     engine.msg("...", style="event", draw_fn=engine.redraw)
     engine.msg("Neil", style="event", draw_fn=engine.redraw)
     engine.msg("...", style="event", draw_fn=engine.redraw)
@@ -35,7 +34,6 @@ def main():
     engine.msg("I'm heading for you...", "Brother...", style="event", draw_fn=engine.redraw)
     print("What is your name?")
     data.PLAYER['name'] = input(">...")
-    '''
     engine.redraw()
 
 
@@ -66,6 +64,11 @@ def main():
 
                 # 3. THEN update what the player sees
                 engine.update_visibility()
+            else:
+                game_state = result.upper()
+                if game_state == "WRONG_KEY":
+                    game_state = "EXPLORE"
+                    continue
 
             if game_state != "EXPLORE":
                 continue
@@ -98,8 +101,6 @@ def main():
             elif engine.death_check() == "sanity":
                 break
         elif game_state == "BATTLE":
-            game_state = "EXPLORE"
-            continue
             result = engine.battle(
                 active_enemy["name"],
                 map_monster=active_enemy,
@@ -123,6 +124,12 @@ def main():
 
         elif game_state == "EVENT":
             game_state = engine.run_dialogue()
+
+        elif game_state == "HELP":
+            game_state = engine.show_guide()
+
+        elif game_state == "QUIT":
+            break
 
 
 
